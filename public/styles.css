@@ -1,0 +1,97 @@
+:root {
+    color-scheme: dark;
+    font-family: Arial, sans-serif;
+    background: #101218;
+    color: #f4f5f7;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+}
+
+.site-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background: #181b24;
+}
+
+.site-header a {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+.site-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+nav {
+    display: flex;
+    gap: 16px;
+}
+
+main {
+    width: min(900px, calc(100% - 32px));
+    margin: 40px auto;
+}
+
+.hero,
+.account-panel {
+    margin-bottom: 24px;
+    padding: 24px;
+    border: 1px solid #343946;
+    border-radius: 12px;
+    background: #181b24;
+}
+
+.discord-button,
+button {
+    display: inline-block;
+    padding: 11px 18px;
+    border: 0;
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.discord-button {
+    color: #ffffff;
+    background: #5865f2;
+    text-decoration: none;
+}
+
+button {
+    color: #ffffff;
+    background: #343946;
+}
+
+#account-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: center;
+}
+
+#account-details[hidden] {
+    display: none;
+}
+
+#account-avatar {
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+a:focus-visible,
+button:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 3px;
+}

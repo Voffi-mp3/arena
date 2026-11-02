@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Yeeps Arena</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <header class="site-header">
+        <a class="site-name" href="/">Yeeps Arena</a>
+        <nav aria-label="Main navigation">
+            <a href="/">Home</a>
+            <a href="#">Rankings</a>
+            <a href="#">Text</a>
+        </nav>
+    </header>
+    <main>
+        <section class="hero">
+            <h1>Header 1</h1>
+            <p>
+                Description
+            </p>
+        </section>
+        <section class="account-panel">
+            <h2>Your account</h2>
+            <a id="discord-login" class="discord-button" href="/auth/discord">
+                Sign in with Discord
+            </a>
+            <div id="account-details" hidden>
+                <img id="account-avatar" width="64" height="64" alt="">
+                <div>
+                    <strong id="account-name"></strong>
+                    <p>Signed in with Discord</p>
+                </div>
+                <form action="/auth/logout" method="post">
+                    <button type="submit">Sign out</button>
+                </form>
+            </div>
+            <p id="account-message" aria-live="polite"></p>
+        </section>
+    </main>
+    <script src="/app.js"></script>
+</body>
+</html>

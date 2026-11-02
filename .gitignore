@@ -147,3 +147,11 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+# Env and node modules
+node_modules/
+.env
+data/*.db
+data/*.db-shm
+data/*.db-wal
+npm-debug.log*
