@@ -95,3 +95,100 @@ button:focus-visible {
     outline: 3px solid #ffffff;
     outline-offset: 3px;
 }
+
+.leaderboard-header,
+.leaderboard-panel {
+    margin-bottom: 24px;
+    padding: 24px;
+    border: 1px solid #343946;
+    border-radius: 12px;
+    background: #181b24;
+}
+
+.eyebrow {
+    margin-bottom: 4px;
+    color: #9ca6ff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 14px 12px;
+    border-bottom: 1px solid #343946;
+    text-align: left;
+    white-space: nowrap;
+}
+
+th {
+    color: #b9c0cf;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+tbody tr:hover {
+    background: #202430;
+}
+
+.leaderboard-player {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.leaderboard-player img {
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.rating-value {
+    color: #9ca6ff;
+    font-weight: 700;
+}
+
+.rank-first {
+    color: #ffd54a;
+    font-weight: 700;
+}
+
+.rank-second {
+    color: #d8dde7;
+    font-weight: 700;
+}
+
+.rank-third {
+    color: #d7905d;
+    font-weight: 700;
+}
+
+.error-message {
+    padding: 14px;
+    border: 1px solid #e45b64;
+    border-radius: 8px;
+    color: #ffd7da;
+    background: #401f25;
+}
+
+@media (max-width: 600px) {
+    .leaderboard-header,
+    .leaderboard-panel {
+        padding: 16px;
+    }
+
+    th,
+    td {
+        padding: 12px 10px;
+    }
+}

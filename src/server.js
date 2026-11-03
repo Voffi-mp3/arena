@@ -1,4 +1,5 @@
 const {
+    db,
     upsertDiscordUser,
     getUserById
 } = require("./database");
@@ -140,6 +141,73 @@ app.get("/api/me", (req, res) => {
             role: req.user.role
         }
     });
+});
+
+app.get("/api/leaderboard", (req, res) => {
+    try {
+        const activeSeason = db.prepare(`
+            SELECT
+                id,
+                name,
+                starts_at,
+                ends_at
+            FROM seasons
+            WHERE status = 'active'
+            ORDER BY id DESC
+            LIMIT 1
+        `).get();
+        if (!activeSeason) {
+            return res.status(404).json({
+                error: "No active season was found."
+            });
+        }
+        const players = db.prepare(`
+            SELECT
+                users.id,
+                users.display_name AS displayName,
+                users.avatar,
+                users.discord_id AS discordId,
+                ratings.rating,
+                ratings.wins,
+                ratings.losses,
+                ratings.matches_played AS matchesPlayed
+            FROM ratings
+            JOIN users
+                ON users.id = ratings.user_id
+            WHERE
+                ratings.season_id = ?
+                AND users.status = 'active'
+            ORDER BY
+                ratings.rating DESC,
+                ratings.wins DESC,
+                ratings.losses ASC,
+                users.display_name ASC
+        `).all(activeSeason.id);
+        const leaderboard = players.map((player, index) => {
+            const completedMatches =
+                player.wins + player.losses;
+            const winRate = completedMatches > 0
+                ? Math.round(
+                    (player.wins / completedMatches) * 1000
+                ) / 10
+                : 0;
+            return {
+                rank: index + 1,
+                ...player,
+                winRate
+            };
+        });
+        res.json({
+            season: activeSeason,
+            players: leaderboard
+        });
+    } catch (error) {
+        console.error("Leaderboard error:", error);
+
+        res.status(500).json({
+            error: "The leaderboard could not be loaded."
+        });
+    }
 });
 
 app.use(
