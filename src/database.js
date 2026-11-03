@@ -74,6 +74,47 @@ CREATE TABLE IF NOT EXISTS arenas (
 );
 `);
 
+function hasColumn(tableName, columnName) {
+    const columns = db
+        .prepare(`PRAGMA table_info(${tableName})`)
+        .all();
+
+    return columns.some(column => {
+        return column.name === columnName;
+    });
+}
+
+function addColumnIfMissing(
+    tableName,
+    columnName,
+    definition
+) {
+    if (hasColumn(tableName, columnName)) {
+        return;
+    }
+
+    db.exec(
+        `ALTER TABLE ${tableName} ` +
+        `ADD COLUMN ${columnName} ${definition}`
+    );
+
+    console.log(
+        `Added ${tableName}.${columnName}`
+    );
+}
+
+addColumnIfMissing(
+    "regulations",
+    "format",
+    "TEXT NOT NULL DEFAULT '1v1'"
+);
+
+addColumnIfMissing(
+    "regulations",
+    "restricted_scope",
+    "TEXT NOT NULL DEFAULT 'loadout'"
+);
+
 function upsertUser(profile) {
  return db.prepare(`INSERT INTO users(discord_id,username,display_name,avatar)
  VALUES(@discordId,@username,@displayName,@avatar)
