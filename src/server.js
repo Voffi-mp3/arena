@@ -11,7 +11,13 @@ const { startBot } = require('./bot');
 
 const app=express();
 const production=process.env.NODE_ENV==='production';
-const frontend=process.env.FRONTEND_URL;
+const frontendUrl = process.env.FRONTEND_URL;
+if (!frontendUrl) {
+    throw new Error(
+        "FRONTEND_URL is missing."
+    );
+}
+const frontendOrigin = new URL(frontendUrl).origin;
 if(production) app.set('trust proxy',1);
 app.use(helmet({
     crossOriginResourcePolicy:{
@@ -19,9 +25,20 @@ app.use(helmet({
     }
     ,contentSecurityPolicy:false
 }));
-app.use(cors({
-    origin:frontend,credentials:true,methods:['GET','POST','OPTIONS'],allowedHeaders:['Content-Type']
-}));
+app.use(
+    cors({
+        origin: frontendOrigin,
+        credentials: true,
+        methods: [
+            "GET",
+            "POST",
+            "OPTIONS"
+        ],
+        allowedHeaders: [
+            "Content-Type"
+        ]
+    })
+);
 app.use(rateLimit({
     windowMs:15*60*1000,limit:200
 }));
@@ -68,9 +85,9 @@ app.get('/health',(_req,res)=>res.json({
 }));
 app.get('/auth/discord',passport.authenticate('discord'));
 app.get('/auth/discord/callback',passport.authenticate('discord',{
-    failureRedirect:`${frontend}?login=failed
+    failureRedirect:`${frontendUrl}?login=failed
     `}
-),(req,res)=>res.redirect(`${frontend}?login=success`));
+),(req,res)=>res.redirect(`${frontendUrl}?login=success`));
 app.post('/auth/logout',(req,res,next)=>req.logout(e=>e?next(e):req.session.destroy(()=>{
     res.clearCookie('connect.sid',{
         secure:production,sameSite:production?'none':'lax'

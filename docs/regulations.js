@@ -1,4 +1,4 @@
-const API=window.ARENA_CONFIG.API_BASE;
+const RANKINGS_API = window.ARENA_CONFIG.API_BASE;
 
 function set(id,v) {
     document.querySelector(id).textContent=v??'Not published'
@@ -26,7 +26,7 @@ function list(id,items,empty) {
     })
 }
 
-fetch(`${API}/api/regulation`).then(async r=>{
+fetch(`${RANKINGS_API}/api/regulation`).then(async r=>{
     const d=await r.json();
     if(!r.ok)throw new Error(d.error);
     const x=d.regulation;

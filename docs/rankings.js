@@ -1,4 +1,4 @@
-const API=window.ARENA_CONFIG.API_BASE;
+const REGULATIONS_API = window.ARENA_CONFIG.API_BASE;
 let players=[];
 const body=document.querySelector('#rank-body'),
 msg=document.querySelector('#rank-msg'),
@@ -54,7 +54,7 @@ function render(list) {
     })
 }
 
-fetch(`${API}/api/leaderboard`).then(async r=>{
+fetch(`${RANKINGS_API}/api/leaderboard`).then(async r=>{
     const d=await r.json();
     if(!r.ok)throw new Error(d.error);
     players=d.players||[];
