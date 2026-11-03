@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Rankings | Yeeps Arena</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body>
+        <header class="site-header">
+            <div class="wrap bar">
+                <a class="brand" href="index.html">Yeeps Arena</a>
+                <nav class="nav">
+                    <a href="index.html">Home</a>
+                    <a aria-current="page" href="rankings.html">Rankings</a>
+                    <a href="regulations.html">Regulations</a>
+                </nav>
+                <div class="account">
+                    <a class="btn" data-login>Sign in with Discord</a>
+                    <span class="account hidden" data-signed></span>
+                </div>
+            </div>
+        </header>
+        <main class="wrap">
+            <section class="hero">
+                <p class="kicker">Competitive rankings</p>
+                <h1 id="season">Leaderboard</h1>
+                <p class="lead">Only approved regulation matches affect ratings.</p>
+            </section>
+            <section class="stats">
+                <article class="card stat">
+                    <span>Ranked players</span>
+                    <strong id="players">0</strong>
+                </article>
+                <article class="card stat">
+                    <span>Completed matches</span>
+                    <strong id="matches">0</strong>
+                </article>
+                <article class="card stat">
+                    <span>Highest rating</span>
+                    <strong id="high">0</strong>
+                </article>
+            </section>
+            <section class="section">
+                <div class="card">
+                    <div class="search">
+                        <label for="player-search">Find a player</label>
+                        <input id="player-search" type="search" placeholder="Search display name">
+                    </div>
+                    <p id="rank-msg" class="muted" aria-live="polite">Loading rankings…</p>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr><th>Rank</th><th>Player</th><th>Rating</th><th>Wins</th><th>Losses</th><th>Matches</th><th>Win rate</th></tr>
+                            </thead>
+                            <tbody id="rank-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            <section class="section">
+                <article class="card">
+                    <h2>How rating works</h2>
+                    <p>Players begin at 1000. Beating a higher-rated player should generally be worth more than beating a lower-rated player. Ratings change only after staff approval, and calculations happen on the server.</p>
+                </article>
+            </section>
+        </main>
+        <footer class="footer">
+            <div class="wrap">© 
+                <span data-year></span> Yeeps Arena. Community made and not an official Yeeps service.
+            </div>
+        </footer>
+        <script src="config.js"></script>
+        <script src="app.js"></script>
+        <script src="rankings.js"></script>
+    </body>
+    </html>

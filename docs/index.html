@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Yeeps Arena</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body>
+        <header class="site-header">
+            <div class="wrap bar">
+                <a class="brand" href="index.html">Yeeps Arena</a>
+                <nav class="nav"><a aria-current="page" href="index.html">Home</a>
+                    <a href="rankings.html">Rankings</a>
+                    <a href="regulations.html">Regulations</a>
+                </nav>
+                <div class="account">
+                    <a class="btn" data-login>Sign in with Discord</a>
+                    <span class="account hidden" data-signed>
+
+                    </span>
+                    <button class="btn secondary hidden" data-signed data-logout type="button">Sign out</button>
+                </div>
+            </div>
+        </header>
+        <main>
+            <section class="hero wrap">
+                <p class="kicker">The Yeeps Arena</p>
+                
+                <h1>Welcome to the Yeeps Arena</h1>
+                <p class="lead">Play Ranked, try regulation matches, vote on future regulations, and join tournaments.</p>
+                <div class="actions">
+                    <a class="btn" href="rankings.html">View rankings</a>
+                    <a class="btn secondary" href="regulations.html">Read Regulation N-R</a>
+                </div>
+            </section>
+            <section class="section wrap">
+                <h2>What can you do?</h2>
+                <div class="grid">
+                    <article class="card">
+                        <h3>Rankings</h3>
+                        <p class="muted">Win and gain points at each seson's end renks reset but old one gets arcived.</p>
+                    </article>
+                    <article class="card">
+                        <h3>Regulation matches</h3>
+                        <p class="muted">Regulation matches are a best of three 1v1.</p>
+                    </article>
+                    <article class="card">
+                        <h3>Testing and voting</h3>
+                        <p class="muted">Help test new items, and vote witch stay and witch are Restricted.</p>
+                    </article>
+                    <article class="card">
+                        <h3>Tournaments</h3>
+                        <p class="muted">Join organized events and compete for seasonal recognition.</p>
+                    </article>
+                </div>
+            </section>
+        </main>
+        <footer class="footer">
+            <div class="wrap">© 
+                <span data-year></span> Yeeps Arena. Community made and not an official Yeeps service.
+            </div>
+        </footer>
+        <script src="config.js">
+        </script>
+        <script src="app.js"></script>
+    </body>
+    </html>

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <title>Regulations | Yeeps Arena</title>
+        <link rel="stylesheet" href="styles.css">
+    </head>
+    <body>
+        <header class="site-header">
+            <div class="wrap bar">
+                <a class="brand" href="index.html">Yeeps Arena</a>
+                <nav class="nav">
+                    <a href="index.html">Home</a>
+                    <a href="rankings.html">Rankings</a>
+                    <a aria-current="page" href="regulations.html">Regulations</a>
+                </nav>
+                <div class="account">
+                    <a class="btn" data-login>Sign in with Discord</a>
+                    <span class="account hidden" data-signed></span>
+                </div>
+            </div>
+        </header>
+        <main class="wrap">
+            <section class="hero">
+                <p class="kicker">Active regulation</p>
+                <h1>
+                    <span id="rcode">N-R</span>: 
+                    <span id="rname">New Update, Restricted</span>
+                </h1>
+                <p id="rdesc" class="lead">Loading regulation…</p>
+                <p id="reg-msg" class="notice" aria-live="polite"></p>
+            </section>
+            <section class="stats">
+                <article class="card stat">
+                    <span>Status</span>
+                    <strong id="rstatus">Active</strong>
+                </article>
+                <article class="card stat">
+                    <span>Format</span>
+                    <strong id="rformat">1v1</strong>
+                </article>
+                <article class="card stat">
+                    <span>Restricted limit</span>
+                    <strong id="rlimit">1 per loadout</strong>
+                </article>
+                <article class="card stat">
+                    <span>Season ends</span>
+                    <strong id="rend">Nov 30, 2026</strong>
+                </article>
+            </section>
+            <section class="section">
+                <div class="grid">
+                    <article class="card">
+                        <h2>Item Pool</h2>
+                        <ul>
+                            <li>Items from the newest update are the main focus.</li>
+                            <li>Older items on the legal-items list may also be used.</li>
+                        </ul>
+                    </article>
+                    <article class="card">
+                        <h2>Restricted Rules</h2>
+                        <ul>
+                            <li>Each player may equip a maximum of one restricted item.</li>
+                            <li>Banned items cannot be used.</li>
+                            <li>Players may change legal items between games.</li>
+                        </ul>
+                    </article>
+                    <article class="card">
+                        <h2>Match Rules</h2>
+                        <ul>
+                            <li>Matches are best of three.</li>
+                            <li>Only approved arenas may be used.</li>
+                            <li>Both players must agree before the match starts.</li>
+                            <li>If a rule violation affects the game, that game point may go to the other player after staff review.</li>
+                        </ul>
+                    </article>
+                </div>
+            </section>
+            <section class="section">
+                <h2>Regulation Codes</h2>
+                <p>A regulation code has two parts: the first letter selects the item pool and the second letter selects the rule modifier.</p>
+                <div class="grid">
+                    <article class="card">
+                        <h3>Content Modifier: Item Pool</h3>
+                        <p><span class="code">N</span> New Update</p>
+                        <p><span class="code">A</span> All Items</p>
+                        <p><span class="code">C</span> Classic</p>
+                        <p><span class="code">E</span> Experimental</p>
+                    </article>
+                    <article class="card">
+                        <h3>Rule Modifier: Rules</h3>
+                        <p><span class="code">S</span> Standard, legal items only</p>
+                        <p><span class="code">R</span> Restricted, set number allowed</p>
+                        <p><span class="code">O</span> Open, everything allowed except exploits</p>
+                    </article>
+                    <article class="card">
+                        <h3>Examples</h3>
+                        <p><span class="code">N-R</span> New Update, Restricted</p>
+                        <p><span class="code">A-S</span> All Items, Standard</p>
+                        <p><span class="code">C-O</span> Classic, Open</p>
+                        <p><span class="code">E-R</span> Experimental, Restricted</p>
+                    </article>
+                </div>
+            </section>
+            <section class="section">
+                <h2>Item Status Lists</h2>
+                <div class="grid">
+                    <article class="card status-legal">
+                        <h3>Legal Items</h3>
+                        <div id="legal"></div>
+                    </article>
+                    <article class="card status-restricted">
+                        <h3>Restricted Items</h3>
+                        <div id="restricted"></div>
+                    </article>
+                    <article class="card status-banned">
+                        <h3>Banned Items</h3>
+                        <div id="banned"></div>
+                    </article>
+                </div>
+            </section>
+            <section class="section">
+                <article class="card">
+                    <h2>Future regulation voting</h2>
+                    <p>The community votes on a content modifier and a rule modifier. The winning combination enters testing, then staff review balance, bugs, and arena compatibility before activation.</p>
+                    <button class="btn secondary" type="button" disabled>Voting coming later</button>
+                </article>
+            </section>
+        </main>
+        <footer class="footer">
+            <div class="wrap">© 
+                <span data-year></span> Yeeps Arena. Community-made and not an official Yeeps service.
+            </div>
+        </footer>
+        <script src="config.js"></script>
+        <script src="app.js"></script>
+        <script src="regulations.js"></script>
+    </body>
+    </html>
