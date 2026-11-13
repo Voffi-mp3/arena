@@ -30,9 +30,12 @@ app.use(
         origin: frontendOrigin,
         credentials: true,
         methods: [
-            "GET",
-            "POST",
-            "OPTIONS"
+            'GET',
+            'POST',
+            'PUT',
+            'PATCH',
+            'DELETE',
+            'OPTIONS'
         ],
         allowedHeaders: [
             "Content-Type"
