@@ -91,7 +91,13 @@ function startBot() {
                     : 'No ranked players yet.';
                 const embed = new EmbedBuilder()
                     .setColor(gold)
-                    .setTitle(`${season.name} Rankings`)
+                const regulation = database.getActiveRegulation();
+                const season = database.getActiveSeason();
+                    .setTitle(
+                        regulation
+                            ? `${regulation.name} Rankings`
+                            : 'Rankings'
+                        )
                     .setDescription(description)
                     .setFooter({ text: 'Only approved matches affect ratings.' });
                 await interaction.reply({ embeds: [embed] });
