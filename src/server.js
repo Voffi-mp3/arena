@@ -162,6 +162,358 @@ app.get('/api/arenas',(_req,res)=>res.json({
     arenas:db.prepare(`SELECT id,name,status,description FROM arenas ORDER BY name`).all()
 }));
 
+const VALID_ITEM_STATUSES = [
+    'legal',
+    'restricted',
+    'banned'
+];
+
+function validId(value) {
+    const id = Number(value);
+    return Number.isSafeInteger(id) && id > 0 ? id : null;
+}
+
+app.get('/api/regulation/:id/items', (req, res) => {
+    const regulationId = validId(req.params.id);
+
+    if (!regulationId) {
+        return res.status(400).json({ error: 'Invalid regulation ID.' });
+    }
+
+    const regulation = db.prepare(
+        'SELECT id FROM regulations WHERE id = ?'
+    ).get(regulationId);
+
+    if (!regulation) {
+        return res.status(404).json({ error: 'Regulation not found.' });
+    }
+
+    const items = db.prepare(`
+        SELECT
+            i.id,
+            i.name,
+            i.category,
+            COALESCE(ri.notes, i.notes) AS notes,
+            ri.status
+        FROM regulation_items ri
+        JOIN items i ON i.id = ri.item_id
+        WHERE ri.regulation_id = ?
+        ORDER BY i.name
+    `).all(regulationId);
+
+    res.json({ items });
+});
+
+app.post(
+    '/api/regulation/:id/items',
+    requireAdmin,
+    (req, res) => {
+        const regulationId = validId(req.params.id);
+        const {
+            name,
+            category = null,
+            notes = null,
+            regulationNotes = null,
+            status
+        } = req.body || {};
+
+        if (!regulationId) {
+            return res.status(400).json({
+                error: 'Invalid regulation ID.'
+            });
+        }
+
+        if (typeof name !== 'string' || !name.trim()) {
+            return res.status(400).json({
+                error: 'Item name is required.'
+            });
+        }
+
+        if (!VALID_ITEM_STATUSES.includes(status)) {
+            return res.status(400).json({
+                error: 'Invalid item status.'
+            });
+        }
+
+        if (
+            (category !== null && typeof category !== 'string') ||
+            (notes !== null && typeof notes !== 'string') ||
+            (regulationNotes !== null && typeof regulationNotes !== 'string')
+        ) {
+            return res.status(400).json({
+                error: 'Invalid item fields.'
+            });
+        }
+
+        try {
+            const createItem = db.transaction(() => {
+                const regulation = db.prepare(
+                    'SELECT id FROM regulations WHERE id = ?'
+                ).get(regulationId);
+
+                if (!regulation) {
+                    throw new Error('REGULATION_NOT_FOUND');
+                }
+
+                const result = db.prepare(`
+                    INSERT INTO items (name, category, notes)
+                    VALUES (?, ?, ?)
+                `).run(
+                    name.trim(),
+                    category,
+                    notes
+                );
+
+                const itemId = Number(result.lastInsertRowid);
+
+                db.prepare(`
+                    INSERT INTO regulation_items
+                    (regulation_id, item_id, status, notes)
+                    VALUES (?, ?, ?, ?)
+                `).run(
+                    regulationId,
+                    itemId,
+                    status,
+                    regulationNotes
+                );
+
+                db.prepare(`
+                    INSERT INTO regulation_item_history
+                    (regulation_id, item_id, item_name,
+                     old_status, new_status, new_notes, changed_by)
+                    VALUES (?, ?, ?, NULL, ?, ?, ?)
+                `).run(
+                    regulationId,
+                    itemId,
+                    name.trim(),
+                    status,
+                    regulationNotes,
+                    req.user.id
+                );
+
+                return itemId;
+            });
+
+            const itemId = createItem();
+
+            res.status(201).json({
+                success: true,
+                itemId
+            });
+        } catch (error) {
+            if (error.message === 'REGULATION_NOT_FOUND') {
+                return res.status(404).json({
+                    error: 'Regulation not found.'
+                });
+            }
+
+            console.error('Create item failed:', error);
+
+            res.status(500).json({
+                error: 'Could not create item.'
+            });
+        }
+    }
+);
+
+app.patch(
+    '/api/regulation/:id/items/:itemId/status',
+    requireAdmin,
+    (req, res) => {
+        const regulationId = validId(req.params.id);
+        const itemId = validId(req.params.itemId);
+        const { status, notes } = req.body || {};
+
+        if (!regulationId || !itemId) {
+            return res.status(400).json({
+                error: 'Invalid ID.'
+            });
+        }
+
+        if (!VALID_ITEM_STATUSES.includes(status)) {
+            return res.status(400).json({
+                error: 'Invalid item status.'
+            });
+        }
+
+        if (
+            Object.hasOwn(req.body, 'notes') &&
+            notes !== null &&
+            typeof notes !== 'string'
+        ) {
+            return res.status(400).json({
+                error: 'Notes must be a string or null.'
+            });
+        }
+
+        try {
+            const updateStatus = db.transaction(() => {
+                const current = db.prepare(`
+                    SELECT i.name, ri.status, ri.notes
+                    FROM regulation_items ri
+                    JOIN items i ON i.id = ri.item_id
+                    WHERE ri.regulation_id = ?
+                      AND ri.item_id = ?
+                `).get(regulationId, itemId);
+
+                if (!current) {
+                    throw new Error('ITEM_NOT_FOUND');
+                }
+
+                const nextNotes = Object.hasOwn(req.body, 'notes')
+                    ? notes
+                    : current.notes;
+
+                db.prepare(`
+                    UPDATE regulation_items
+                    SET status = ?, notes = ?
+                    WHERE regulation_id = ? AND item_id = ?
+                `).run(
+                    status,
+                    nextNotes,
+                    regulationId,
+                    itemId
+                );
+
+                if (
+                    current.status !== status ||
+                    current.notes !== nextNotes
+                ) {
+                    db.prepare(`
+                        INSERT INTO regulation_item_history
+                        (regulation_id, item_id, item_name,
+                         old_status, new_status, old_notes,
+                         new_notes, changed_by)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    `).run(
+                        regulationId,
+                        itemId,
+                        current.name,
+                        current.status,
+                        status,
+                        current.notes,
+                        nextNotes,
+                        req.user.id
+                    );
+                }
+            });
+
+            updateStatus();
+
+            res.json({
+                success: true,
+                status
+            });
+        } catch (error) {
+            if (error.message === 'ITEM_NOT_FOUND') {
+                return res.status(404).json({
+                    error: 'Item not found in this regulation.'
+                });
+            }
+
+            console.error('Item status update failed:', error);
+
+            res.status(500).json({
+                error: 'Could not update item.'
+            });
+        }
+    }
+);
+
+app.put('/api/items/:itemId', requireAdmin, (req, res) => {
+    const itemId = validId(req.params.itemId);
+    const { name, category = null, notes = null } = req.body || {};
+
+    if (!itemId) {
+        return res.status(400).json({ error: 'Invalid item ID.' });
+    }
+
+    if (typeof name !== 'string' || !name.trim()) {
+        return res.status(400).json({
+            error: 'Item name is required.'
+        });
+    }
+
+    if (
+        (category !== null && typeof category !== 'string') ||
+        (notes !== null && typeof notes !== 'string')
+    ) {
+        return res.status(400).json({
+            error: 'Invalid item fields.'
+        });
+    }
+
+    const result = db.prepare(`
+        UPDATE items
+        SET name = ?, category = ?, notes = ?
+        WHERE id = ?
+    `).run(name.trim(), category, notes, itemId);
+
+    if (!result.changes) {
+        return res.status(404).json({
+            error: 'Item not found.'
+        });
+    }
+
+    res.json({ success: true });
+});
+
+app.delete(
+    '/api/regulation/:id/items/:itemId',
+    requireAdmin,
+    (req, res) => {
+        const regulationId = validId(req.params.id);
+        const itemId = validId(req.params.itemId);
+        if (!regulationId || !itemId) {
+            return res.status(400).json({ error: 'Invalid ID.' });
+        }
+        try {
+            const removeItem = db.transaction(() => {
+                const current = db.prepare(`
+                    SELECT i.name, ri.status, ri.notes
+                    FROM regulation_items ri
+                    JOIN items i ON i.id = ri.item_id
+                    WHERE ri.regulation_id = ?
+                      AND ri.item_id = ?
+                `).get(regulationId, itemId);
+                if (!current) {
+                    throw new Error('ITEM_NOT_FOUND');
+                }
+                db.prepare(`
+                    INSERT INTO regulation_item_history
+                    (regulation_id, item_id, item_name,
+                     old_status, new_status, old_notes,
+                     new_notes, changed_by)
+                    VALUES (?, ?, ?, ?, 'removed', ?, NULL, ?)
+                `).run(
+                    regulationId,
+                    itemId,
+                    current.name,
+                    current.status,
+                    current.notes,
+                    req.user.id
+                );
+                db.prepare(`
+                    DELETE FROM regulation_items
+                    WHERE regulation_id = ? AND item_id = ?
+                `).run(regulationId, itemId);
+            });
+            removeItem();
+            res.json({ success: true });
+        } catch (error) {
+            if (error.message === 'ITEM_NOT_FOUND') {
+                return res.status(404).json({
+                    error: 'Item not found in this regulation.'
+                });
+            }
+            console.error('Remove item failed:', error);
+            res.status(500).json({
+                error: 'Could not remove item.'
+            });
+        }
+    }
+);
+
 app.use((e,_req,res,_next)=>{
     console.error(e);
     res.status(500).json({
