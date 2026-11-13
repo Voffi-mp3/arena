@@ -734,6 +734,126 @@ app.post('/api/regulations', requireAdmin, (req, res) => {
     }
 });
 
+app.patch('/api/regulations/:id', requireAdmin, (req, res) => {
+    const id = validId(req.params.id);
+    const body = req.body || {};
+
+    if (!id) {
+        return res.status(400).json({ error: 'Invalid regulation ID.' });
+    }
+
+    const fields = {
+        code: {
+            column: 'code',
+            valid: v => typeof v === 'string' &&
+                /^[A-Z0-9_-]{1,20}$/i.test(v.trim()),
+            value: v => v.trim()
+        },
+        name: {
+            column: 'name',
+            valid: v => typeof v === 'string' && !!v.trim(),
+            value: v => v.trim()
+        },
+        description: {
+            column: 'description',
+            valid: v => v === null || typeof v === 'string',
+            value: v => v
+        },
+        format: {
+            column: 'format',
+            valid: v => typeof v === 'string' && !!v.trim(),
+            value: v => v.trim()
+        },
+        restrictedLimit: {
+            column: 'restricted_limit',
+            valid: v => v === null ||
+                (Number.isInteger(v) && v >= 0),
+            value: v => v
+        },
+        restrictedScope: {
+            column: 'restricted_scope',
+            valid: v => typeof v === 'string' && !!v.trim(),
+            value: v => v.trim()
+        },
+        endsAt: {
+            column: 'ends_at',
+            valid: v => v === null || typeof v === 'string',
+            value: v => v
+        }
+    };
+
+    const updates = [];
+    const values = [];
+
+    for (const [key, field] of Object.entries(fields)) {
+        if (!Object.hasOwn(body, key)) continue;
+
+        const value = body[key];
+
+        if (!field.valid(value)) {
+            return res.status(400).json({
+                error: `Invalid value for ${key}.`
+            });
+        }
+
+        updates.push(`${field.column} = ?`);
+        values.push(field.value(value));
+    }
+
+    if (!updates.length) {
+        return res.status(400).json({
+            error: 'No valid fields provided.'
+        });
+    }
+
+    try {
+        const result = db.prepare(`
+            UPDATE regulations
+            SET ${updates.join(', ')}
+            WHERE id = ?
+        `).run(...values, id);
+
+        if (!result.changes) {
+            return res.status(404).json({
+                error: 'Regulation not found.'
+            });
+        }
+
+        const regulation = db.prepare(`
+            SELECT
+                id,
+                code,
+                name,
+                description,
+                format,
+                restricted_limit AS restrictedLimit,
+                restricted_scope AS restrictedScope,
+                status,
+                starts_at AS startsAt,
+                ends_at AS endsAt
+            FROM regulations
+            WHERE id = ?
+        `).get(id);
+
+        res.json({
+            success: true,
+            regulation
+        });
+
+    } catch (error) {
+        if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+            return res.status(409).json({
+                error: 'That regulation code already exists.'
+            });
+        }
+
+        console.error('Regulation update failed:', error);
+
+        res.status(500).json({
+            error: 'Could not update regulation.'
+        });
+    }
+});
 
 app.post(
     '/api/regulations/:id/activate',
