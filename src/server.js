@@ -453,7 +453,6 @@ app.patch(
     }
 );
 
-
 app.post(
     '/api/regulation/:id/items/bulk',
     requireAdmin,
@@ -482,6 +481,8 @@ app.post(
         for (const item of items) {
             if (
                 !item ||
+                typeof item !== 'object' ||
+                Array.isArray(item) ||
                 typeof item.name !== 'string' ||
                 !item.name.trim() ||
                 !VALID_ITEM_STATUSES.includes(item.status) ||
@@ -500,78 +501,134 @@ app.post(
         }
 
         try {
-            const createBulk = db.transaction(() => {
+            const processBulk = db.transaction(() => {
                 const regulation = db.prepare(`
-                    SELECT id FROM regulations WHERE id = ?
+                    SELECT id
+                    FROM regulations
+                    WHERE id = ?
                 `).get(regulationId);
 
                 if (!regulation) {
                     throw new Error('REGULATION_NOT_FOUND');
                 }
 
-                const insertItem = db.prepare(`
+                const upsertItem = db.prepare(`
                     INSERT INTO items (name, category, notes)
                     VALUES (?, ?, ?)
+                    ON CONFLICT(name) DO UPDATE SET
+                        category = COALESCE(
+                            excluded.category,
+                            items.category
+                        ),
+                        notes = COALESCE(
+                            excluded.notes,
+                            items.notes
+                        )
                 `);
 
-                const insertRegulationItem = db.prepare(`
+                const findItem = db.prepare(`
+                    SELECT id
+                    FROM items
+                    WHERE name = ?
+                `);
+
+                const findRegulationItem = db.prepare(`
+                    SELECT status, notes
+                    FROM regulation_items
+                    WHERE regulation_id = ?
+                    AND item_id = ?
+                `);
+
+                const upsertRegulationItem = db.prepare(`
                     INSERT INTO regulation_items
                     (regulation_id, item_id, status, notes)
                     VALUES (?, ?, ?, ?)
+                    ON CONFLICT(regulation_id, item_id)
+                    DO UPDATE SET
+                        status = excluded.status,
+                        notes = excluded.notes
                 `);
 
                 const insertHistory = db.prepare(`
                     INSERT INTO regulation_item_history
-                    (regulation_id, item_id, item_name,
-                     old_status, new_status, new_notes, changed_by)
-                    VALUES (?, ?, ?, NULL, ?, ?, ?)
+                    (
+                        regulation_id,
+                        item_id,
+                        item_name,
+                        old_status,
+                        new_status,
+                        old_notes,
+                        new_notes,
+                        changed_by
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 `);
 
-                const created = [];
+                const processed = [];
 
                 for (const item of items) {
                     const name = item.name.trim();
 
-                    const result = insertItem.run(
+                    upsertItem.run(
                         name,
                         item.category?.trim() || null,
                         item.notes?.trim() || null
                     );
 
-                    const itemId = Number(result.lastInsertRowid);
+                    const existingItem = findItem.get(name);
+                    const itemId = existingItem.id;
 
-                    insertRegulationItem.run(
+                    const current = findRegulationItem.get(
+                        regulationId,
+                        itemId
+                    );
+
+                    const regulationNotes =
+                        Object.hasOwn(item, 'regulationNotes')
+                            ? item.regulationNotes?.trim() || null
+                            : current?.notes ?? null;
+
+                    upsertRegulationItem.run(
                         regulationId,
                         itemId,
                         item.status,
-                        item.regulationNotes?.trim() || null
+                        regulationNotes
                     );
 
-                    insertHistory.run(
-                        regulationId,
-                        itemId,
-                        name,
-                        item.status,
-                        item.regulationNotes?.trim() || null,
-                        req.user.id
-                    );
+                    if (
+                        !current ||
+                        current.status !== item.status ||
+                        current.notes !== regulationNotes
+                    ) {
+                        insertHistory.run(
+                            regulationId,
+                            itemId,
+                            name,
+                            current?.status ?? null,
+                            item.status,
+                            current?.notes ?? null,
+                            regulationNotes,
+                            req.user.id
+                        );
+                    }
 
-                    created.push({
+                    processed.push({
                         itemId,
                         name,
-                        status: item.status
+                        status: item.status,
+                        action: current ? 'updated' : 'attached'
                     });
                 }
 
-                return created;
+                return processed;
             });
 
-            const created = createBulk();
+            const result = processBulk();
 
-            res.status(201).json({
+            res.json({
                 success: true,
-                created: created.length,
-                items: created
+                processed: result.length,
+                items: result
             });
 
         } catch (error) {
@@ -584,11 +641,12 @@ app.post(
             console.error('Bulk create failed:', error);
 
             res.status(500).json({
-                error: 'Could not create items.'
+                error: 'Could not process items.'
             });
         }
     }
 );
+
 
 
 app.put('/api/items/:itemId', requireAdmin, (req, res) => {
