@@ -89,15 +89,9 @@ function startBot() {
                 const description = players.length
                     ? players.map((player, index) => `${medals[index] || `**#${index + 1}**`} <@${player.discordId}> • **${player.rating}** • ${player.wins}-${player.losses}`).join('\n')
                     : 'No ranked players yet.';
-                const regulation = database.getActiveRegulation();
-                const season = database.getActiveSeason();
                 const embed = new EmbedBuilder()
                     .setColor(gold)
-                    .setTitle(
-                        regulation
-                            ? `${regulation.name} Rankings`
-                            : 'Rankings'
-                        )
+                    .setTitle(`${season.name} Rankings`)
                     .setDescription(description)
                     .setFooter({ text: 'Only approved matches affect ratings.' });
                 await interaction.reply({ embeds: [embed] });
