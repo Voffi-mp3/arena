@@ -56,6 +56,29 @@ app.use(session({
 }));
 app.use(passport.initialize());
 app.use(passport.session());
+
+function requireLogin(req, res, next) {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({
+            error: 'You must be signed in.'
+        });
+    }
+    next();
+}
+function requireAdmin(req, res, next) {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({
+            error: 'You must be signed in.'
+        });
+    }
+    if (req.user.role !== 'admin') {
+        return res.status(403).json({
+            error: 'Administrator permission required.'
+        });
+    }
+    next();
+}
+
 passport.serializeUser((u,d)=>d(null,u.id));
 passport.deserializeUser((id,d)=>{
     try{
