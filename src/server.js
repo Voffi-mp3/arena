@@ -173,6 +173,39 @@ function validId(value) {
     return Number.isSafeInteger(id) && id > 0 ? id : null;
 }
 
+app.get(
+    '/api/regulation/:id/items/history',
+    requireAdmin,
+    (req, res) => {
+        const regulationId = validId(req.params.id);
+
+        if (!regulationId) {
+            return res.status(400).json({
+                error: 'Invalid regulation ID.'
+            });
+        }
+
+        const history = db.prepare(`
+            SELECT
+                id,
+                item_id AS itemId,
+                item_name AS itemName,
+                old_status AS oldStatus,
+                new_status AS newStatus,
+                old_notes AS oldNotes,
+                new_notes AS newNotes,
+                changed_by AS changedBy,
+                changed_at AS changedAt
+            FROM regulation_item_history
+            WHERE regulation_id = ?
+            ORDER BY id DESC
+            LIMIT 200
+        `).all(regulationId);
+
+        res.json({ history });
+    }
+);
+
 app.get('/api/regulation/:id/items', (req, res) => {
     const regulationId = validId(req.params.id);
 
@@ -415,6 +448,152 @@ app.patch(
 
             res.status(500).json({
                 error: 'Could not update item.'
+            });
+        }
+    }
+);
+
+app.patch(
+    '/api/regulation/:id/items/bulk',
+    requireAdmin,
+    (req, res) => {
+        const regulationId = validId(req.params.id);
+        const items = req.body?.items;
+
+        if (!regulationId) {
+            return res.status(400).json({
+                error: 'Invalid regulation ID.'
+            });
+        }
+
+        if (
+            !Array.isArray(items) ||
+            items.length < 1 ||
+            items.length > 100
+        ) {
+            return res.status(400).json({
+                error: 'Provide between 1 and 100 items.'
+            });
+        }
+
+        const ids = new Set();
+
+        for (const item of items) {
+            if (
+                !item ||
+                !validId(item.itemId) ||
+                !VALID_ITEM_STATUSES.includes(item.status) ||
+                ids.has(Number(item.itemId)) ||
+                (
+                    Object.hasOwn(item, 'notes') &&
+                    item.notes !== null &&
+                    typeof item.notes !== 'string'
+                )
+            ) {
+                return res.status(400).json({
+                    error: 'Invalid or duplicate item entry.'
+                });
+            }
+
+            ids.add(Number(item.itemId));
+        }
+
+        try {
+            const updateBulk = db.transaction(() => {
+                const regulation = db.prepare(`
+                    SELECT id FROM regulations WHERE id = ?
+                `).get(regulationId);
+
+                if (!regulation) {
+                    throw new Error('REGULATION_NOT_FOUND');
+                }
+
+                const findItem = db.prepare(`
+                    SELECT i.name, ri.status, ri.notes
+                    FROM regulation_items ri
+                    JOIN items i ON i.id = ri.item_id
+                    WHERE ri.regulation_id = ?
+                      AND ri.item_id = ?
+                `);
+
+                const updateItem = db.prepare(`
+                    UPDATE regulation_items
+                    SET status = ?, notes = ?
+                    WHERE regulation_id = ? AND item_id = ?
+                `);
+
+                const history = db.prepare(`
+                    INSERT INTO regulation_item_history
+                    (regulation_id, item_id, item_name,
+                     old_status, new_status, old_notes,
+                     new_notes, changed_by)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                `);
+
+                for (const item of items) {
+                    const itemId = Number(item.itemId);
+
+                    const current = findItem.get(
+                        regulationId,
+                        itemId
+                    );
+
+                    if (!current) {
+                        throw new Error(`ITEM_NOT_FOUND:${itemId}`);
+                    }
+
+                    const nextNotes = Object.hasOwn(item, 'notes')
+                        ? item.notes
+                        : current.notes;
+
+                    updateItem.run(
+                        item.status,
+                        nextNotes,
+                        regulationId,
+                        itemId
+                    );
+
+                    if (
+                        current.status !== item.status ||
+                        current.notes !== nextNotes
+                    ) {
+                        history.run(
+                            regulationId,
+                            itemId,
+                            current.name,
+                            current.status,
+                            item.status,
+                            current.notes,
+                            nextNotes,
+                            req.user.id
+                        );
+                    }
+                }
+            });
+
+            updateBulk();
+
+            res.json({
+                success: true,
+                updated: items.length
+            });
+        } catch (error) {
+            if (error.message === 'REGULATION_NOT_FOUND') {
+                return res.status(404).json({
+                    error: 'Regulation not found.'
+                });
+            }
+
+            if (error.message.startsWith('ITEM_NOT_FOUND:')) {
+                return res.status(404).json({
+                    error: `Item ${error.message.split(':')[1]} was not found. No items were changed.`
+                });
+            }
+
+            console.error('Bulk item update failed:', error);
+
+            res.status(500).json({
+                error: 'Bulk update failed.'
             });
         }
     }
