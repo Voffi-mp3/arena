@@ -453,7 +453,8 @@ app.patch(
     }
 );
 
-app.patch(
+
+app.post(
     '/api/regulation/:id/items/bulk',
     requireAdmin,
     (req, res) => {
@@ -476,30 +477,30 @@ app.patch(
             });
         }
 
-        const ids = new Set();
+        const names = new Set();
 
         for (const item of items) {
             if (
                 !item ||
-                !validId(item.itemId) ||
+                typeof item.name !== 'string' ||
+                !item.name.trim() ||
                 !VALID_ITEM_STATUSES.includes(item.status) ||
-                ids.has(Number(item.itemId)) ||
-                (
-                    Object.hasOwn(item, 'notes') &&
-                    item.notes !== null &&
-                    typeof item.notes !== 'string'
+                names.has(item.name.trim().toLowerCase()) ||
+                ['category', 'notes', 'regulationNotes'].some(
+                    key => item[key] != null &&
+                        typeof item[key] !== 'string'
                 )
             ) {
                 return res.status(400).json({
-                    error: 'Invalid or duplicate item entry.'
+                    error: 'Invalid item or duplicate name in request.'
                 });
             }
 
-            ids.add(Number(item.itemId));
+            names.add(item.name.trim().toLowerCase());
         }
 
         try {
-            const updateBulk = db.transaction(() => {
+            const createBulk = db.transaction(() => {
                 const regulation = db.prepare(`
                     SELECT id FROM regulations WHERE id = ?
                 `).get(regulationId);
@@ -508,75 +509,71 @@ app.patch(
                     throw new Error('REGULATION_NOT_FOUND');
                 }
 
-                const findItem = db.prepare(`
-                    SELECT i.name, ri.status, ri.notes
-                    FROM regulation_items ri
-                    JOIN items i ON i.id = ri.item_id
-                    WHERE ri.regulation_id = ?
-                      AND ri.item_id = ?
+                const insertItem = db.prepare(`
+                    INSERT INTO items (name, category, notes)
+                    VALUES (?, ?, ?)
                 `);
 
-                const updateItem = db.prepare(`
-                    UPDATE regulation_items
-                    SET status = ?, notes = ?
-                    WHERE regulation_id = ? AND item_id = ?
+                const insertRegulationItem = db.prepare(`
+                    INSERT INTO regulation_items
+                    (regulation_id, item_id, status, notes)
+                    VALUES (?, ?, ?, ?)
                 `);
 
-                const history = db.prepare(`
+                const insertHistory = db.prepare(`
                     INSERT INTO regulation_item_history
                     (regulation_id, item_id, item_name,
-                     old_status, new_status, old_notes,
-                     new_notes, changed_by)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                     old_status, new_status, new_notes, changed_by)
+                    VALUES (?, ?, ?, NULL, ?, ?, ?)
                 `);
 
+                const created = [];
+
                 for (const item of items) {
-                    const itemId = Number(item.itemId);
+                    const name = item.name.trim();
 
-                    const current = findItem.get(
-                        regulationId,
-                        itemId
+                    const result = insertItem.run(
+                        name,
+                        item.category?.trim() || null,
+                        item.notes?.trim() || null
                     );
 
-                    if (!current) {
-                        throw new Error(`ITEM_NOT_FOUND:${itemId}`);
-                    }
+                    const itemId = Number(result.lastInsertRowid);
 
-                    const nextNotes = Object.hasOwn(item, 'notes')
-                        ? item.notes
-                        : current.notes;
-
-                    updateItem.run(
+                    insertRegulationItem.run(
+                        regulationId,
+                        itemId,
                         item.status,
-                        nextNotes,
-                        regulationId,
-                        itemId
+                        item.regulationNotes?.trim() || null
                     );
 
-                    if (
-                        current.status !== item.status ||
-                        current.notes !== nextNotes
-                    ) {
-                        history.run(
-                            regulationId,
-                            itemId,
-                            current.name,
-                            current.status,
-                            item.status,
-                            current.notes,
-                            nextNotes,
-                            req.user.id
-                        );
-                    }
+                    insertHistory.run(
+                        regulationId,
+                        itemId,
+                        name,
+                        item.status,
+                        item.regulationNotes?.trim() || null,
+                        req.user.id
+                    );
+
+                    created.push({
+                        itemId,
+                        name,
+                        status: item.status
+                    });
                 }
+
+                return created;
             });
 
-            updateBulk();
+            const created = createBulk();
 
-            res.json({
+            res.status(201).json({
                 success: true,
-                updated: items.length
+                created: created.length,
+                items: created
             });
+
         } catch (error) {
             if (error.message === 'REGULATION_NOT_FOUND') {
                 return res.status(404).json({
@@ -584,20 +581,15 @@ app.patch(
                 });
             }
 
-            if (error.message.startsWith('ITEM_NOT_FOUND:')) {
-                return res.status(404).json({
-                    error: `Item ${error.message.split(':')[1]} was not found. No items were changed.`
-                });
-            }
-
-            console.error('Bulk item update failed:', error);
+            console.error('Bulk create failed:', error);
 
             res.status(500).json({
-                error: 'Bulk update failed.'
+                error: 'Could not create items.'
             });
         }
     }
 );
+
 
 app.put('/api/items/:itemId', requireAdmin, (req, res) => {
     const itemId = validId(req.params.itemId);
