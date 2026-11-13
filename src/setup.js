@@ -1,7 +1,7 @@
 require('dotenv').config();
 const {db}=require('./database');
 const tx=db.transaction(()=>{
- db.prepare(`INSERT OR IGNORE INTO seasons(id,name,status,starts_at,ends_at) VALUES(1,'Preseason','active',CURRENT_TIMESTAMP,'2026-11-30 23:59:59')`).run();
+ db.prepare(`INSERT OR IGNORE INTO seasons(id,name,status,starts_at,ends_at) VALUES(1,'','active',CURRENT_TIMESTAMP,'2026-11-30 23:59:59')`).run();
  db.prepare(`INSERT INTO regulations(code,name,description,format,restricted_limit,restricted_scope,status,starts_at,ends_at)
  VALUES('N-R','New Update, Restricted','Items from the newest update are the main focus. Older legal items may also be used.','1v1',1,'loadout','active',CURRENT_TIMESTAMP,'2026-11-30 23:59:59')
  ON CONFLICT(code) DO UPDATE SET name=excluded.name,description=excluded.description,format=excluded.format,restricted_limit=excluded.restricted_limit,restricted_scope=excluded.restricted_scope,status=excluded.status,ends_at=excluded.ends_at`).run();
