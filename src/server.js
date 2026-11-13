@@ -648,6 +648,172 @@ app.post(
 );
 
 
+app.post('/api/regulations', requireAdmin, (req, res) => {
+    const {
+        code,
+        name,
+        description = null,
+        format = '1v1',
+        restrictedLimit = 1,
+        restrictedScope = 'loadout',
+        endsAt = null
+    } = req.body || {};
+
+    if (
+        typeof code !== 'string' ||
+        !/^[A-Z0-9_-]{1,20}$/i.test(code.trim())
+    ) {
+        return res.status(400).json({
+            error: 'Invalid regulation code.'
+        });
+    }
+
+    if (
+        typeof name !== 'string' ||
+        !name.trim() ||
+        typeof format !== 'string' ||
+        typeof restrictedScope !== 'string' ||
+        (description !== null && typeof description !== 'string') ||
+        (endsAt !== null && typeof endsAt !== 'string') ||
+        (
+            restrictedLimit !== null &&
+            (!Number.isInteger(restrictedLimit) || restrictedLimit < 0)
+        )
+    ) {
+        return res.status(400).json({
+            error: 'Invalid regulation fields.'
+        });
+    }
+
+    try {
+        const result = db.prepare(`
+            INSERT INTO regulations (
+                code,
+                name,
+                description,
+                format,
+                restricted_limit,
+                restricted_scope,
+                status,
+                starts_at,
+                ends_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, 'draft', NULL, ?)
+        `).run(
+            code.trim(),
+            name.trim(),
+            description,
+            format,
+            restrictedLimit,
+            restrictedScope,
+            endsAt
+        );
+
+        res.status(201).json({
+            success: true,
+            regulation: {
+                id: Number(result.lastInsertRowid),
+                code: code.trim(),
+                name: name.trim(),
+                status: 'draft'
+            }
+        });
+
+    } catch (error) {
+        if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+            return res.status(409).json({
+                error: 'A regulation with this code already exists.'
+            });
+        }
+
+        console.error(error);
+
+        res.status(500).json({
+            error: 'Could not create regulation.'
+        });
+    }
+});
+
+
+app.post(
+    '/api/regulations/:id/activate',
+    requireAdmin,
+    (req, res) => {
+        const regulationId = validId(req.params.id);
+
+        if (!regulationId) {
+            return res.status(400).json({
+                error: 'Invalid regulation ID.'
+            });
+        }
+
+        try {
+            const activate = db.transaction(() => {
+                const target = db.prepare(`
+                    SELECT id, code, name, status
+                    FROM regulations
+                    WHERE id = ?
+                `).get(regulationId);
+
+                if (!target) {
+                    throw new Error('REGULATION_NOT_FOUND');
+                }
+
+                db.prepare(`
+                    UPDATE regulations
+                    SET status = 'inactive',
+                        ends_at = CURRENT_TIMESTAMP
+                    WHERE status = 'active'
+                      AND id != ?
+                `).run(regulationId);
+
+                db.prepare(`
+                    UPDATE regulations
+                    SET status = 'active',
+                        starts_at = CASE
+                            WHEN status = 'active' THEN starts_at
+                            ELSE CURRENT_TIMESTAMP
+                        END,
+                        ends_at = NULL
+                    WHERE id = ?
+                `).run(regulationId);
+
+                return db.prepare(`
+                    SELECT
+                        id,
+                        code,
+                        name,
+                        status,
+                        starts_at AS startsAt,
+                        ends_at AS endsAt
+                    FROM regulations
+                    WHERE id = ?
+                `).get(regulationId);
+            });
+
+            const regulation = activate();
+
+            res.json({
+                success: true,
+                message: 'Regulation activated successfully.',
+                regulation
+            });
+
+        } catch (error) {
+            if (error.message === 'REGULATION_NOT_FOUND') {
+                return res.status(404).json({
+                    error: 'Regulation not found.'
+                });
+            }
+
+            console.error(error);
+
+            res.status(500).json({
+                error: 'Could not activate regulation.'
+            });
+        }
+    }
+);
 
 app.put('/api/items/:itemId', requireAdmin, (req, res) => {
     const itemId = validId(req.params.itemId);
