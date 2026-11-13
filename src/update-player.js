@@ -1,40 +1,70 @@
+
 require("dotenv").config();
 
 const { db } = require("./database");
 
-const discordId = "ID";
+const discordId = "DISCORD_ID";
 
-const newRating = --;
-const newWins = --;
-const newLosses = --;
+const newRating = 1000;
+const newWins = 0;
+const newLosses = 0;
 
-const season = db.prepare(`
-    SELECT id, name
-    FROM seasons
-    WHERE status = 'active'
-    ORDER BY id DESC
-    LIMIT 1
-`).get();
+const role = "admin"; // admin, owner, moderator, tester, player, remember to add the rest of the ones you make oki
 
-if (!season) {
-    console.error("No active season exists.");
-    process.exitCode = 1;
-} else {
+try {
+    if (!/^\d{17,20}$/.test(discordId)) {
+        throw new Error("Invalid Discord ID.");
+    }
+
+    if (
+        typeof role !== "string" ||
+        !/^[a-z][a-z0-9_-]{0,31}$/i.test(role)
+    ) {
+        throw new Error("Invalid role.");
+    }
+
+    if (
+        !Number.isFinite(newRating) ||
+        !Number.isInteger(newWins) ||
+        !Number.isInteger(newLosses) ||
+        newWins < 0 ||
+        newLosses < 0
+    ) {
+        throw new Error("Invalid player statistics.");
+    }
+
     const player = db.prepare(`
         SELECT
             id,
-            display_name AS displayName
+            display_name AS displayName,
+            role
         FROM users
         WHERE discord_id = ?
     `).get(discordId);
 
     if (!player) {
-        console.error(
+        throw new Error(
             "Player not found. The player must sign in first."
         );
+    }
 
-        process.exitCode = 1;
-    } else {
+    const season = db.prepare(`
+        SELECT id, name
+        FROM seasons
+        WHERE status = 'active'
+        ORDER BY id DESC
+        LIMIT 1
+    `).get();
+
+    const updatePlayer = db.transaction(() => {
+        db.prepare(`
+            UPDATE users
+            SET role = ?
+            WHERE id = ?
+        `).run(role, player.id);
+
+        if (!season) return null;
+
         db.prepare(`
             INSERT OR IGNORE INTO ratings (
                 user_id,
@@ -45,21 +75,17 @@ if (!season) {
                 matches_played
             )
             VALUES (?, ?, 1000, 0, 0, 0)
-        `).run(
-            player.id,
-            season.id
-        );
+        `).run(player.id, season.id);
 
-        const result = db.prepare(`
+        db.prepare(`
             UPDATE ratings
             SET
                 rating = ?,
                 wins = ?,
                 losses = ?,
                 matches_played = ?
-            WHERE
-                user_id = ?
-                AND season_id = ?
+            WHERE user_id = ?
+              AND season_id = ?
         `).run(
             newRating,
             newWins,
@@ -69,7 +95,7 @@ if (!season) {
             season.id
         );
 
-        const updated = db.prepare(`
+        return db.prepare(`
             SELECT
                 users.display_name AS displayName,
                 ratings.rating,
@@ -77,24 +103,34 @@ if (!season) {
                 ratings.losses,
                 ratings.matches_played AS matchesPlayed
             FROM ratings
-            JOIN users
-                ON users.id = ratings.user_id
-            WHERE
-                ratings.user_id = ?
-                AND ratings.season_id = ?
-        `).get(
-            player.id,
-            season.id
-        );
+            JOIN users ON users.id = ratings.user_id
+            WHERE users.id = ?
+              AND ratings.season_id = ?
+        `).get(player.id, season.id);
+    });
 
-        console.log(
-            result.changes === 1
-                ? "Player updated successfully."
-                : "No rating was changed."
-        );
+    const updated = updatePlayer();
 
+    console.log("Player updated successfully!");
+
+    console.log("Account role:");
+    console.table([{
+        username: player.displayName,
+        oldRole: player.role,
+        newRole: role
+    }]);
+
+    if (updated) {
+        console.log("Player statistics:");
         console.table([updated]);
+    } else {
+        console.log("Role updated, but no active season exists.");
     }
-}
 
-db.close();
+} catch (error) {
+    console.error("Update failed:", error.message);
+    process.exitCode = 1;
+
+} finally {
+    db.close();
+}
