@@ -72,6 +72,18 @@ CREATE TABLE IF NOT EXISTS arenas (
  status TEXT NOT NULL DEFAULT 'testing',
  description TEXT
 );
+CREATE TABLE IF NOT EXISTS regulation_item_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    regulation_id INTEGER NOT NULL,
+    item_id INTEGER NOT NULL,
+    item_name TEXT NOT NULL,
+    old_status TEXT,
+    new_status TEXT,
+    old_notes TEXT,
+    new_notes TEXT,
+    changed_by INTEGER,
+    changed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 `);
 
 function hasColumn(tableName, columnName) {
