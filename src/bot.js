@@ -52,7 +52,7 @@ function startBot() {
                     '7. Report exploits privately instead of teaching others to abuse them.',
                     "8. Follow Discord's and Yeeps' Terms of Service."
                 ].join('\n\n');
-                await interaction.reply({ embeds: [new EmbedBuilder().setColor(purple).setTitle('Server Guidelines').setDescription(text)] });
+                await interaction.reply({ embeds: [new EmbedBuilder().setColor(purple).setTitle('Yeeps Arena Guidelines').setDescription(text)] });
                 return;
             }
 
