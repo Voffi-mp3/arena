@@ -18,12 +18,22 @@ const commands = [
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
 
-rest.put(
-    Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, process.env.DISCORD_GUILD_ID),
-    { body: commands }
-).then(() => {
-    console.log(`Registered ${commands.length} commands.`);
-}).catch(error => {
-    console.error(error);
-    process.exitCode = 1;
-});
+(async () => {
+    try {
+        await rest.put(
+            Routes.applicationCommands(process.env.DISCORD_CLIENT_ID),
+            { body: commands }
+        );
+        console.log(`Registered ${commands.length} global commands.`);
+        if (process.env.DISCORD_GUILD_ID) {
+            await rest.put(
+                Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, process.env.DISCORD_GUILD_ID),
+                { body: [] }
+            );
+            console.log('Cleared old guild commands.');
+        }
+    } catch (error) {
+        console.error(error);
+        process.exitCode = 1;
+    }
+})();
