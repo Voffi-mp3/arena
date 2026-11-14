@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, EmbedBuilder, ActivityType } = require('discord.js');
 const database = require('./bot-database');
 
 function startBot() {
@@ -14,6 +14,11 @@ function startBot() {
 
     client.once('ready', readyClient => {
         console.log(`Discord bot online as ${readyClient.user.tag}`);
+        readyClient.user.setActivity({
+            name: 'Compeating In',
+            type: ActivityType.Custom,
+            state: 'Yeeps PvP'
+        });
     });
 
     client.on('error', error => {
