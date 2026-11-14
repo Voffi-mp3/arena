@@ -34,7 +34,7 @@ function startBot() {
                     .setColor(blue)
                     .setTitle('The Yeeps Arena')
                     .addFields(
-                        { name: 'CW name', value: '`ARENA`', inline: true },
+                        { name: 'CW name', value: '`YEEPSARENA`', inline: true },
                         { name: 'Website', value: process.env.WEBSITE_URL || 'Coming soon' }
                     );
                 await interaction.reply({ embeds: [embed] });
