@@ -203,6 +203,39 @@ function startBot() {
                 return;
             }
 
+            if (interaction.commandName === 'rank') {
+                const user = interaction.options.getUser('player') || interaction.user;
+                const player = database.getProfile(user.id, season.id);
+                if (!player) {
+                    await interaction.reply({
+                        content: `${defaultYeep} ${user} has not joined the website yet.`,
+                        ephemeral: true
+                    });
+                    return;
+                }
+                const allPlayers = database.getRankings(season.id, 1000);
+                const rankIndex = allPlayers.findIndex(p => p.discordId === user.id);
+                const rankText = rankIndex !== -1 ? `#${rankIndex + 1}` : 'Unranked';
+                const member = interaction.guild
+                    ? await interaction.guild.members.fetch(user.id).catch(() => null)
+                    : null;
+                const yeep = getYeepEmoji(member);
+                const matchedRole = roleEmojis.find(r => member?.roles.cache.has(r.roleId));
+                const embedColor = matchedRole ? roleColors[matchedRole.roleId] : LightSteel;
+            
+                const embed = new EmbedBuilder()
+                    .setColor(embedColor)
+                    .setAuthor({
+                        name: `${player.displayName}  •  ${rankText}  •  ${player.rating || 1000}`,
+                        iconURL: user.displayAvatarURL({ size: 128 })
+                    })
+                    .setDescription(`${yeep} **Rank:** ${rankText}   |   <:Build:1571297875000955041> **Rating:** **${player.rating || 1000}**`);
+            
+                await interaction.reply({ embeds: [embed] });
+                return;
+                }
+
+
         } catch (error) {
             console.error(`Command ${interaction.commandName} failed:`, error);
             const response = { content: 'Command failed.', ephemeral: true };
