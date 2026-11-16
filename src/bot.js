@@ -119,8 +119,8 @@ function startBot() {
                     .setTitle(player.displayName)
                     .setThumbnail(user.displayAvatarURL({ size: 128 }))
                     .addFields(
-                        { name: 'Rating', value: String(player.rating || 1000), inline: true },
-                        { name: 'Record', value: `${wins}-${losses}`, inline: true },
+                        { name: `<:Build:1571297875000955041> Rating`, value: String(player.rating || 1000), inline: true },
+                        { name: `<:Recent:1571297859402465391> Record`, value: `${wins}-${losses}`, inline: true },
                         { name: `<:FFA:1571297869779177553> Matches`, value: String(matches), inline: true },
                         { name: `<:Hunt:1571297863676334202> Win rate`, value: `${winRate}%`, inline: true },
                         { name: `<:Gear:1571297866218213549> Role`, value: player.role, inline: true }
