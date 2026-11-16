@@ -76,7 +76,7 @@ function startBot() {
                     '7. Report exploits privately instead of teaching others to abuse them.',
                     "8. Follow Discord's and Yeeps' Terms of Service."
                 ].join('\n\n');
-                await interaction.reply({ embeds: [new EmbedBuilder().setColor(purple).setTitle('Yeeps Arena Guidelines').setDescription(text)] });
+                await interaction.reply({ embeds: [new EmbedBuilder().setColor(embedColor).setTitle('Yeeps Arena Guidelines').setDescription(text)] });
                 return;
             }
 
@@ -126,7 +126,7 @@ function startBot() {
                     : 'No ranked players yet.';
             
                 const embed = new EmbedBuilder()
-                    .setColor(purple)
+                    .setColor(embedColor)
                     .setTitle(`${season.name} Rankings <:Hunt:1571297863676334202>`)
                     .setDescription(description)
                     .setFooter({ text: 'Only approved matches affect ratings.' });
@@ -153,7 +153,7 @@ function startBot() {
                 const matches = player.matchesPlayed || 0;
                 const winRate = wins + losses ? ((wins / (wins + losses)) * 100).toFixed(1) : '0.0';
                 const embed = new EmbedBuilder()
-                    .setColor(purple)
+                    .setColor(embedColor)
                     .setTitle(`${yeep} ${player.displayName}`)
                     .setThumbnail(user.displayAvatarURL({ size: 128 }))
                     .addFields(
