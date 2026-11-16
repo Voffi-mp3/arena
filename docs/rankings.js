@@ -21,7 +21,7 @@
     const search = document.querySelector("#player-search");
 
     function getYeepIcon(player) {
-        return roleYeepIcons[player.role] || defaultYeep;
+        return roleYeepIcons[player.roleId] || defaultYeep;
     }
 
     function createCell(text, className = "") {
@@ -93,6 +93,7 @@
             player.displayName || "Unknown player";
         
         wrapper.appendChild(name);
+        cell.appendChild(wrapper);
 
         return cell;
     }
