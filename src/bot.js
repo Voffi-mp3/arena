@@ -7,7 +7,7 @@ function startBot() {
         return null;
     }
 
-    const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+    const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
     const blue = 0x66d9ff;
     const gold = 0xffd45c;
     const purple = 0x927cff;
@@ -29,6 +29,18 @@ function startBot() {
         if (!interaction.isChatInputCommand()) return;
 
         try {
+            const roleEmojis = [
+                { roleId: '1571822840658001960', emoji: '<:PeachYeep:1571297882978525344>' },
+                { roleId: '1571822880453431336', emoji: '<:PurpleYeep:1571297860736000161>' },
+                { roleId: '1571822908299542608', emoji: '<:BlueYeep:1571297876535939143>' }
+            ];
+            const defaultYeep = '<:Yeep:1571297852515295262>';
+            
+            const getYeepEmoji = (member) => {
+                const matched = roleEmojis.find(r => member?.roles.cache.has(r.roleId));
+                return matched ? matched.emoji : defaultYeep;
+            };
+
             if (interaction.commandName === 'ping') {
                 await interaction.reply({ content: `Online • ${client.ws.ping} ms`, ephemeral: true });
                 return;
@@ -86,20 +98,33 @@ function startBot() {
                 await interaction.reply({ content: 'No active season.', ephemeral: true });
                 return;
             }
-
+            
             if (interaction.commandName === 'rankings') {
+                await interaction.deferReply();
+            
                 const amount = interaction.options.getInteger('amount') || 10;
                 const players = database.getRankings(season.id, amount);
                 const medals = ['🥇', '🥈', '🥉'];
+            
+                const userIds = players.map(p => p.discordId);
+                const members = (interaction.guild && userIds.length)
+                    ? await interaction.guild.members.fetch({ user: userIds }).catch(() => new Map())
+                    : new Map();
+            
                 const description = players.length
-                    ? players.map((player, index) => `${medals[index] || `**#${index + 1}**`} <@${player.discordId}> • **${player.rating}** • ${player.wins}-${player.losses}`).join('\n')
+                    ? players.map((player, index) => {
+                        const yeep = getYeepEmoji(members.get(player.discordId));
+                        return `${medals[index] || `**#${index + 1}**`} <@${player.discordId}> ${yeep} • <:Build:1571297875000955041> **${player.rating}** • <:Recent:1571297859402465391> ${player.wins}-${player.losses}`;
+                    }).join('\n')
                     : 'No ranked players yet.';
+            
                 const embed = new EmbedBuilder()
                     .setColor(gold)
                     .setTitle(`${season.name} Rankings <:Hunt:1571297863676334202>`)
                     .setDescription(description)
                     .setFooter({ text: 'Only approved matches affect ratings.' });
-                await interaction.reply({ embeds: [embed] });
+            
+                await interaction.editReply({ embeds: [embed] });
                 return;
             }
 
@@ -107,16 +132,22 @@ function startBot() {
                 const user = interaction.options.getUser('player') || interaction.user;
                 const player = database.getProfile(user.id, season.id);
                 if (!player) {
-                    await interaction.reply({ content: `${user} has not joined the website yet.`, ephemeral: true });
+                    await interaction.reply({ content: `<:Yeep:1571297852515295262> ${user} has not joined the website yet.`, ephemeral: true });
                     return;
                 }
+
+                const member = interaction.guild
+                    ? await interaction.guild.members.fetch(user.id).catch(() => null)
+                    : null;
+                const yeep = getYeepEmoji(member);
+
                 const wins = player.wins || 0;
                 const losses = player.losses || 0;
                 const matches = player.matchesPlayed || 0;
                 const winRate = wins + losses ? ((wins / (wins + losses)) * 100).toFixed(1) : '0.0';
                 const embed = new EmbedBuilder()
                     .setColor(purple)
-                    .setTitle(player.displayName)
+                    .setTitle(`${yeep} ${player.displayName}`)
                     .setThumbnail(user.displayAvatarURL({ size: 128 }))
                     .addFields(
                         { name: `<:Build:1571297875000955041> Rating`, value: String(player.rating || 1000), inline: true },
@@ -135,6 +166,7 @@ function startBot() {
             else await interaction.reply(response);
         }
     });
+
 
     client.login(process.env.DISCORD_BOT_TOKEN).catch(error => {
         console.error('Discord bot login failed:', error);
