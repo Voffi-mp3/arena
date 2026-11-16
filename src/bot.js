@@ -75,7 +75,7 @@ function startBot() {
                         { name: 'Status', value: regulation.status, inline: true },
                         { name: 'Format', value: regulation.format || '1v1', inline: true },
                         { name: 'Restricted limit', value: `${regulation.restricted_limit ?? 0} per ${regulation.restricted_scope || 'loadout'}`, inline: true },
-                        { name: 'Match rules', value: 'Best of three • Approved arenas only • Both players agree before starting' }
+                        { name: 'Match rules', value: 'Best of three • Both players agree before starting' }
                     );
                 await interaction.reply({ embeds: [embed] });
                 return;
@@ -96,7 +96,7 @@ function startBot() {
                     : 'No ranked players yet.';
                 const embed = new EmbedBuilder()
                     .setColor(gold)
-                    .setTitle(`${season.name} Rankings`)
+                    .setTitle(`${season.name} Rankings <:Hunt:1571297863676334202>`)
                     .setDescription(description)
                     .setFooter({ text: 'Only approved matches affect ratings.' });
                 await interaction.reply({ embeds: [embed] });
@@ -121,9 +121,9 @@ function startBot() {
                     .addFields(
                         { name: 'Rating', value: String(player.rating || 1000), inline: true },
                         { name: 'Record', value: `${wins}-${losses}`, inline: true },
-                        { name: 'Matches', value: String(matches), inline: true },
-                        { name: 'Win rate', value: `${winRate}%`, inline: true },
-                        { name: 'Role', value: player.role, inline: true }
+                        { name: `<:FFA:1571297869779177553> Matches`, value: String(matches), inline: true },
+                        { name: `<:Hunt:1571297863676334202> Win rate`, value: `${winRate}%`, inline: true },
+                        { name: `<:Gear:1571297866218213549> Role`, value: player.role, inline: true }
                     );
                 await interaction.reply({ embeds: [embed] });
                 return;
