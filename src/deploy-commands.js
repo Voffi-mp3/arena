@@ -18,6 +18,10 @@ const commands = [
         .setDescription('Compares the stats of two players.')
         .addUserOption(option => option.setName('player2').setDescription('Opponent to compare against').setRequired(true))
         .addUserOption(option => option.setName('player1').setDescription('First player (defaults to you)')),
+    new SlashCommandBuilder()
+    .setName('rank')
+    .setDescription('Shows a player’s current rank and rating.')
+    .addUserOption(option => option.setName('player').setDescription('Player to check')),
     new SlashCommandBuilder().setName('ping').setDescription('Checks whether the bot is online.')
 ].map(command => command.toJSON());
 
