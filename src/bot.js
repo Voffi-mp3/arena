@@ -12,10 +12,12 @@ function startBot() {
 
     client.once('ready', readyClient => {
         console.log(`Discord bot online as ${readyClient.user.tag}`);
-        readyClient.user.setActivity({
-            name: 'Compeating In',
-            type: ActivityType.Custom,
-            state: 'Yeeps PvP'
+        readyClient.user.setPresence({
+            activities: [{
+                name: 'Yeeps PvP',
+                type: ActivityType.Playing
+            }],
+        status: 'online'
         });
     });
 
