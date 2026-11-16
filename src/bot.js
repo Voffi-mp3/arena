@@ -46,7 +46,7 @@ function startBot() {
                     '1571822908299542608': 0xa5afd6
             };
             const LightSteel = 0x97acb4;
-
+            const member = interaction.member;
             const matchedRole = roleEmojis.find(r => member?.roles.cache.has(r.roleId));
             const embedColor = matchedRole ? roleColors[matchedRole.roleId] : LightSteel;
 
