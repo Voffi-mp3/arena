@@ -8,15 +8,7 @@ function startBot() {
     }
 
     const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
-    const roleColors = {
-        '1571822840658001960': 0xf2c4af,
-        '1571822880453431336': 0xcea3d3,
-        '1571822908299542608': 0xa5afd6
-    };
-    const LightSteel = 0x97acb4;
 
-const matchedRole = roleEmojis.find(r => member?.roles.cache.has(r.roleId));
-const embedColor = matchedRole ? roleColors[matchedRole.roleId] : LightSteel;
 
     client.once('ready', readyClient => {
         console.log(`Discord bot online as ${readyClient.user.tag}`);
@@ -46,6 +38,15 @@ const embedColor = matchedRole ? roleColors[matchedRole.roleId] : LightSteel;
                 const matched = roleEmojis.find(r => member?.roles.cache.has(r.roleId));
                 return matched ? matched.emoji : defaultYeep;
             };
+                const roleColors = {
+                    '1571822840658001960': 0xf2c4af,
+                    '1571822880453431336': 0xcea3d3,
+                    '1571822908299542608': 0xa5afd6
+            };
+            const LightSteel = 0x97acb4;
+
+            const matchedRole = roleEmojis.find(r => member?.roles.cache.has(r.roleId));
+            const embedColor = matchedRole ? roleColors[matchedRole.roleId] : LightSteel;
 
             if (interaction.commandName === 'ping') {
                 await interaction.reply({ content: `Online • ${client.ws.ping} ms`, ephemeral: true });
