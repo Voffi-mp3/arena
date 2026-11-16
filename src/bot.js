@@ -8,9 +8,15 @@ function startBot() {
     }
 
     const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers] });
-    const blue = 0x66d9ff;
-    const gold = 0xffd45c;
-    const purple = 0x927cff;
+    const roleColors = {
+        '1571822840658001960': 0xf2c4af,
+        '1571822880453431336': 0xcea3d3,
+        '1571822908299542608': 0xa5afd6
+    };
+    const LightSteel = 0x97acb4;
+
+const matchedRole = roleEmojis.find(r => member?.roles.cache.has(r.roleId));
+const embedColor = matchedRole ? roleColors[matchedRole.roleId] : LightSteel;
 
     client.once('ready', readyClient => {
         console.log(`Discord bot online as ${readyClient.user.tag}`);
@@ -48,7 +54,7 @@ function startBot() {
 
             if (interaction.commandName === 'cw') {
                 const embed = new EmbedBuilder()
-                    .setColor(blue)
+                    .setColor(embedColor)
                     .setTitle('The Yeeps Arena')
                     .addFields(
                         { name: 'CW name', value: '`YEEPSARENA`', inline: true },
@@ -80,7 +86,7 @@ function startBot() {
                     return;
                 }
                 const embed = new EmbedBuilder()
-                    .setColor(blue)
+                    .setColor(embedColor)
                     .setTitle(`Regulation ${regulation.code}: ${regulation.name}`)
                     .setDescription(regulation.description || 'No description.')
                     .addFields(
@@ -119,7 +125,7 @@ function startBot() {
                     : 'No ranked players yet.';
             
                 const embed = new EmbedBuilder()
-                    .setColor(gold)
+                    .setColor(purple)
                     .setTitle(`${season.name} Rankings <:Hunt:1571297863676334202>`)
                     .setDescription(description)
                     .setFooter({ text: 'Only approved matches affect ratings.' });
@@ -183,7 +189,7 @@ function startBot() {
                 const yeep2 = getYeepEmoji(members.get(user2.id));
             
                 const embed = new EmbedBuilder()
-                    .setColor(blue)
+                    .setColor(embedColor)
                     .setTitle(`${yeep1} ${p1.displayName}  <:Hunt:1571297863676334202>  ${yeep2} ${p2.displayName}`)
                     .addFields(
                         { name: '<:Build:1571297875000955041> Rating', value: `**${p1.rating || 1000}** vs **${p2.rating || 1000}**`, inline: true },
