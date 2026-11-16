@@ -114,7 +114,7 @@ function startBot() {
                 const description = players.length
                     ? players.map((player, index) => {
                         const yeep = getYeepEmoji(members.get(player.discordId));
-                        return `${medals[index] || `**#${index + 1}**`} <@${player.discordId}> ${yeep} • <:Build:1571297875000955041> **${player.rating}** • <:Recent:1571297859402465391> ${player.wins}-${player.losses}`;
+                        return `${medals[index] || `**#${index + 1}**`} ${yeep} <@${player.discordId}> • <:Build:1571297875000955041> **${player.rating}** • <:Recent:1571297859402465391> ${player.wins}-${player.losses}`;
                     }).join('\n')
                     : 'No ranked players yet.';
             
