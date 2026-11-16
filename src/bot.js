@@ -159,6 +159,41 @@ function startBot() {
                 await interaction.reply({ embeds: [embed] });
                 return;
             }
+
+            if (interaction.commandName === 'compare') {
+                const user1 = interaction.options.getUser('player1') || interaction.user;
+                const user2 = interaction.options.getUser('player2');
+            
+                const p1 = database.getProfile(user1.id, season.id);
+                const p2 = database.getProfile(user2.id, season.id);
+            
+                if (!p1 || !p2) {
+                    await interaction.reply({ 
+                        content: `${defaultYeep} Both players must be registered on the website to compare stats.`, 
+                        ephemeral: true 
+                    });
+                    return;
+                }
+            
+                const members = interaction.guild
+                    ? await interaction.guild.members.fetch({ user: [user1.id, user2.id] }).catch(() => new Map())
+                    : new Map();
+            
+                const yeep1 = getYeepEmoji(members.get(user1.id));
+                const yeep2 = getYeepEmoji(members.get(user2.id));
+            
+                const embed = new EmbedBuilder()
+                    .setColor(blue)
+                    .setTitle(`${yeep1} ${p1.displayName}  <:Hunt:1571297863676334202>  ${yeep2} ${p2.displayName}`)
+                    .addFields(
+                        { name: '<:Build:1571297875000955041> Rating', value: `**${p1.rating || 1000}** vs **${p2.rating || 1000}**`, inline: true },
+                        { name: '<:Recent:1571297859402465391> Record', value: `${p1.wins || 0}-${p1.losses || 0} vs ${p2.wins || 0}-${p2.losses || 0}`, inline: true }
+                    );
+            
+                await interaction.reply({ embeds: [embed] });
+                return;
+            }
+
         } catch (error) {
             console.error(`Command ${interaction.commandName} failed:`, error);
             const response = { content: 'Command failed.', ephemeral: true };
