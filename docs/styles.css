@@ -137,19 +137,6 @@ a {
     margin-top:24px;
 }
 
-.yeep-icon {
-    width: 22px;
-    height: 22px;
-    object-fit: contain;
-    margin-right: .5rem;
-}
-
-.player {
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-}
-
 .badge {
     display:inline-flex;
     padding:6px 10px;
