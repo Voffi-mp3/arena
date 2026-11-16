@@ -1,19 +1,7 @@
 (() => {
     const rankingsApi =
         window.ARENA_CONFIG.API_BASE;
-
-    const roleYeepIcons = {
-    "1571822840658001960":
-        "https://cdn.discordapp.com/emojis/1571297882978525344.png",
-    "1571822880453431336":
-        "https://cdn.discordapp.com/emojis/1571297860736000161.png",
-    "1571822908299542608":
-        "https://cdn.discordapp.com/emojis/1571297876535939143.png"
-    };
-
-    const defaultYeep =
-        "https://cdn.discordapp.com/emojis/1571297852515295262.png";
-
+    
     let players = [];
     
     const body = document.querySelector("#rank-body");
@@ -79,19 +67,11 @@
             );
         }
 
-        const yeep = document.createElement("img");
-
-        yeep.className = "yeep-icon";
-        yeep.src = getYeepIcon(player);
-        yeep.alt = "";
-        
-        wrapper.appendChild(yeep);
-        
         const name = document.createElement("strong");
-        
+
         name.textContent =
             player.displayName || "Unknown player";
-        
+
         wrapper.appendChild(name);
         cell.appendChild(wrapper);
 
