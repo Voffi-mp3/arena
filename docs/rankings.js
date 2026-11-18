@@ -1,235 +1,141 @@
 (() => {
-    const rankingsApi =
-        window.ARENA_CONFIG.API_BASE;
-    
+    const api = window.ARENA_CONFIG.API_BASE;
     let players = [];
-    
-    const body = document.querySelector("#rank-body");
-    const message = document.querySelector("#rank-msg");
-    const search = document.querySelector("#player-search");
+    const body = document.querySelector('#rank-body');
+    const message = document.querySelector('#rank-msg');
+    const search = document.querySelector('#player-search');
 
-    function getYeepIcon(player) {
-        return roleYeepIcons[player.roleId] || defaultYeep;
+    function fallback(name) {
+        const element = document.createElement('span');
+        element.className = 'fallback';
+        element.textContent = name?.charAt(0).toUpperCase() || '?';
+        return element;
     }
 
-    function createCell(text, className = "") {
-        const cell = document.createElement("td");
+    function avatar(player) {
+        const frame = document.createElement("span");
+        frame.className = "profile-avatar-frame";
+        const frameValue =
+            player.cosmetics
+                ?.avatarFrame
+                ?.value || null;
 
-        cell.textContent = String(text);
-        cell.className = className;
+        const isColorFrame =
+            /^#[0-9a-f]{6}$/i.test(
+                frameValue || ""
+            );
 
-        return cell;
-    }
-
-    function createFallbackAvatar(displayName) {
-        const fallback = document.createElement("span");
-
-        fallback.className = "fallback";
-        fallback.textContent =
-            displayName?.charAt(0).toUpperCase() || "?";
-
-        return fallback;
-    }
-
-    function createPlayerCell(player) {
-        const cell = document.createElement("td");
-        const wrapper = document.createElement("div");
-
-        wrapper.className = "player";
-
+        const isImageFrame =
+            /^img\/avatar-rings\/[a-z0-9._-]+\.(png|webp)$/i.test(
+                frameValue || ""
+            );
+        if (isColorFrame) {
+            frame.style.setProperty(
+                "--avatar-frame-color",
+                frameValue
+            );
+            frame.classList.add(
+                "profile-avatar-frame-color"
+            );
+        }
+        let profileImage;
         if (
             player.avatar &&
             player.discordId
         ) {
-            const image = document.createElement("img");
-
-            image.className = "avatar";
-            image.alt = "";
-            image.loading = "lazy";
-            image.src =
+            profileImage =
+                document.createElement("img");
+            profileImage.className =
+                "avatar";
+            profileImage.alt = "";
+            profileImage.loading =
+                "lazy";
+            profileImage.src =
                 "https://cdn.discordapp.com/avatars/" +
                 `${player.discordId}/${player.avatar}.png`;
-
-            image.addEventListener("error", () => {
-                image.replaceWith(
-                    createFallbackAvatar(
-                        player.displayName
-                    )
-                );
-            });
-
-            wrapper.appendChild(image);
+            profileImage.addEventListener(
+                "error",
+                () => {
+                    profileImage.replaceWith(
+                        fallback(
+                            player.baseDisplayName ||
+                            player.displayName
+                        )
+                    );
+                }
+            );
         } else {
-            wrapper.appendChild(
-                createFallbackAvatar(
-                    player.displayName
-                )
+            profileImage = fallback(
+                player.baseDisplayName ||
+                player.displayName
             );
         }
-
-        const name = document.createElement("strong");
-
-        name.textContent =
-            player.displayName || "Unknown player";
-
-        wrapper.appendChild(name);
-        cell.appendChild(wrapper);
-
-        return cell;
+        frame.appendChild(profileImage);
+        if (isImageFrame) {
+            const decoration =
+                document.createElement("img");
+            decoration.className =
+                "avatar-frame-decoration";
+            decoration.alt = "";
+            decoration.loading =
+                "lazy";
+            decoration.src = frameValue;
+            frame.appendChild(decoration);
+        }
+        return frame;
     }
 
-    function renderPlayers(playerList) {
+    function cell(value) { 
+        const td = document.createElement('td'); 
+        td.textContent = String(value); 
+        return td; 
+    }
+
+    function playerCell(player) { 
+        const td=document.createElement('td'),wrap=document.createElement('div'),name=document.createElement('strong'); 
+        wrap.className='player'; 
+        name.textContent=player.displayName||'Unknown player'; 
+        wrap.append(avatar(player),name); 
+        td.append(wrap); 
+        return td; 
+    }
+
+    function render(list) {
         body.replaceChildren();
-
-        if (playerList.length === 0) {
-            message.textContent =
-                players.length === 0
-                    ? "No ranked players yet."
-                    : "No players match this search.";
-
+        if (!list.length) { 
+            message.textContent = players.length 
+                ? 'No players match this search.' 
+                : 'No ranked players yet.'; 
             return;
         }
 
-        message.textContent = "";
-
-        for (const player of playerList) {
-            const row = document.createElement("tr");
-
-            row.appendChild(
-                createCell(`#${player.rank}`)
-            );
-
-            row.appendChild(
-                createPlayerCell(player)
-            );
-
-            row.appendChild(
-                createCell(player.rating ?? 1000)
-            );
-
-            row.appendChild(
-                createCell(player.wins ?? 0)
-            );
-
-            row.appendChild(
-                createCell(player.losses ?? 0)
-            );
-
-            row.appendChild(
-                createCell(player.matchesPlayed ?? 0)
-            );
-
-            row.appendChild(
-                createCell(
-                    `${player.winRate ?? 0}%`
-                )
-            );
-
-            body.appendChild(row);
-        }
-    }
-
-    function updateSummary(data) {
-        const seasonElement =
-            document.querySelector("#season");
-
-        const playersElement =
-            document.querySelector("#players");
-
-        const matchesElement =
-            document.querySelector("#matches");
-
-        const highestElement =
-            document.querySelector("#high");
-
-        seasonElement.textContent =
-            `${data.season.name} Rankings`;
-
-        playersElement.textContent =
-            String(players.length);
-
-        const totalPlayerMatches = players.reduce(
-            (total, player) => {
-                return total +
-                    Number(player.matchesPlayed || 0);
-            },
-            0
-        );
-
-        matchesElement.textContent =
-            String(
-                Math.floor(totalPlayerMatches / 2)
-            );
-
-        const ratings = players.map(player => {
-            return Number(player.rating || 0);
+        message.textContent = '';
+        list.forEach(player => { 
+            const row=document.createElement('tr'); 
+            row.append(cell(`#${player.rank}`),playerCell(player),cell(player.rating??1000),cell(player.wins??0),cell(player.losses??0),cell(player.matchesPlayed??0),cell(`${player.winRate??0}%`)); 
+            body.append(row); 
         });
-
-        highestElement.textContent =
-            ratings.length > 0
-                ? String(Math.max(...ratings))
-                : "0";
     }
 
-    async function loadLeaderboard() {
-        message.textContent =
-            "Loading rankings...";
-
+    async function load() {
         try {
-            const response = await fetch(
-                `${rankingsApi}/api/leaderboard`
-            );
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(
-                    data.error ||
-                    "The leaderboard could not be loaded."
-                );
-            }
-
-            if (
-                !data.season ||
-                !Array.isArray(data.players)
-            ) {
-                throw new Error(
-                    "The leaderboard response is invalid."
-                );
-            }
-
-            players = data.players;
-
-            updateSummary(data);
-            renderPlayers(players);
-        } catch (error) {
-            console.error(
-                "Leaderboard error:",
-                error
-            );
-
-            message.textContent =
-                error.message ||
-                "The leaderboard is unavailable.";
+           const response=await fetch(`${api}/api/leaderboard`),data=await response.json();
+           if(!response.ok)throw new Error(data.error||'Leaderboard unavailable.');
+           players=data.players||[];
+           document.querySelector('#season').textContent=`${data.season.name} Rankings`;
+           document.querySelector('#players').textContent=players.length;
+           document.querySelector('#matches').textContent=Math.floor(players.reduce((sum,p)=>sum+Number(p.matchesPlayed||0),0)/2);
+           document.querySelector('#high').textContent=players.length?Math.max(...players.map(p=>Number(p.rating||0))):0;
+           render(players);
+        } catch(error) { 
+            console.error(error); 
+            message.textContent=error.message; 
         }
     }
 
-    search?.addEventListener("input", () => {
-        const query =
-            search.value.trim().toLowerCase();
-
-        const filteredPlayers = players.filter(
-            player => {
-                return (
-                    player.displayName || ""
-                )
-                    .toLowerCase()
-                    .includes(query);
-            }
-        );
-
-        renderPlayers(filteredPlayers);
+    search?.addEventListener('input',()=>{
+        const q=search.value.trim().toLowerCase();
+        render(players.filter(p=>(p.displayName||'').toLowerCase().includes(q)||(p.baseDisplayName||'').toLowerCase().includes(q)));
     });
-
-    loadLeaderboard();
+    load();
 })();
