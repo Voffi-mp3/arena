@@ -13,78 +13,96 @@
     }
 
     function avatar(player) {
-        const frame = document.createElement("span");
-        frame.className = "profile-avatar-frame";
-        const frameValue =
-            player.cosmetics
-                ?.avatarFrame
-                ?.value || null;
+    const frame = document.createElement("span");
 
-        const isColorFrame =
-            /^#[0-9a-f]{6}$/i.test(
-                frameValue || ""
-            );
+    frame.className = "profile-avatar-frame";
 
-        const isImageFrame =
-            /^img\/avatar-rings\/[a-z0-9._-]+\.(png|webp)$/i.test(
-                frameValue || ""
-            );
-        if (isColorFrame) {
-            frame.style.setProperty(
-                "--avatar-frame-color",
-                frameValue
-            );
-            frame.classList.add(
-                "profile-avatar-frame-color"
-            );
-        }
-        let profileImage;
-        if (
-            player.avatar &&
-            player.discordId
-        ) {
-            profileImage =
-                document.createElement("img");
-            profileImage.className =
-                "avatar";
-            profileImage.alt = "";
-            profileImage.loading =
-                "lazy";
-            profileImage.src =
-                "https://cdn.discordapp.com/avatars/" +
-                `${player.discordId}/${player.avatar}.png`;
-            profileImage.addEventListener(
-                "error",
-                () => {
-                    profileImage.replaceWith(
-                        fallback(
-                            player.baseDisplayName ||
-                            player.displayName
-                        )
-                    );
-                }
-            );
-        } else {
-            profileImage = fallback(
-                player.baseDisplayName ||
-                player.displayName
-            );
-        }
-        frame.appendChild(profileImage);
-        if (isImageFrame) {
-            const decoration =
-                document.createElement("img");
-            decoration.className =
-                "avatar-frame-decoration";
-            decoration.alt = "";
-            decoration.loading =
-                "lazy";
-            decoration.src = frameValue;
-            frame.appendChild(decoration);
-        }
-        return frame;
+    const frameValue =
+        player.cosmetics
+            ?.avatarFrame
+            ?.value || null;
+
+    const isColorFrame =
+        /^#[0-9a-f]{6}$/i.test(
+            frameValue || ""
+        );
+
+    const isImageFrame =
+        /^img\/avatar-rings\/[a-z0-9._-]+\.(png|webp)$/i.test(
+            frameValue || ""
+        );
+
+    if (isColorFrame) {
+        frame.style.setProperty(
+            "--avatar-frame-color",
+            frameValue
+        );
+
+        frame.classList.add(
+            "profile-avatar-frame-color"
+        );
     }
 
+    let profileImage;
+
+    if (
+        player.avatar &&
+        player.discordId
+    ) {
+        profileImage =
+            document.createElement("img");
+
+        profileImage.className =
+            "avatar";
+
+        profileImage.alt = "";
+
+        profileImage.loading =
+            "lazy";
+
+        profileImage.src =
+            "https://cdn.discordapp.com/avatars/" +
+            `${player.discordId}/${player.avatar}.png`;
+
+        profileImage.addEventListener(
+            "error",
+            () => {
+                profileImage.replaceWith(
+                    fallback(
+                        player.baseDisplayName ||
+                        player.displayName
+                    )
+                );
+            }
+        );
+    } else {
+        profileImage = fallback(
+            player.baseDisplayName ||
+            player.displayName
+        );
+    }
+
+    frame.appendChild(profileImage);
+
+    if (isImageFrame) {
+        const decoration =
+            document.createElement("img");
+
+        decoration.className =
+            "avatar-frame-decoration";
+
+        decoration.alt = "";
+
+        decoration.loading =
+            "lazy";
+
+        decoration.src = frameValue;
+
+        frame.appendChild(decoration);
+    }
+
+    return frame;
+}
     function cell(value) { 
         const td = document.createElement('td'); 
         td.textContent = String(value); 
