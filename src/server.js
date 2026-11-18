@@ -14,6 +14,10 @@ const VALID_USER_STATUSES = [
     'banned'
 ];
 
+const {
+    getLeaderboardWithCosmetics
+} = require("./leaderboard-cosmetics");
+
 const app=express();
 const production=process.env.NODE_ENV==='production';
 const frontendUrl = process.env.FRONTEND_URL;
@@ -150,17 +154,18 @@ app.get('/api/me',(req,res)=>req.user?res.json({
     signedIn:false
 }));
 
-app.get('/api/leaderboard',(_req,res)=>{
-    const season=db.prepare(`SELECT id,name,starts_at,ends_at FROM seasons WHERE status='active' ORDER BY id DESC LIMIT 1`).get();
-    if(!season)return res.status(404).json({
-        error:'No active season was found.'
-    }); 
-    const rows=db.prepare(`SELECT u.id,u.display_name displayName,u.discord_id discordId,u.avatar,r.rating,r.wins,r.losses,r.matches_played matchesPlayed FROM ratings r JOIN users u ON u.id=r.user_id WHERE r.season_id=? AND u.status='active' ORDER BY r.rating DESC,r.wins DESC,r.losses ASC,u.display_name`).all(season.id); 
-    res.json({
-        season,players:rows.map((p,i)=>({
-            ...p,rank:i+1,winRate:p.wins+p.losses?Math.round(p.wins/(p.wins+p.losses)*1000)/10:0
-        }))
-    });
+app.get("/api/leaderboard", (_req, res) => {
+    const leaderboard =
+        getLeaderboardWithCosmetics(db);
+
+    if (!leaderboard) {
+        return res.status(404).json({
+            error:
+                "No active season was found."
+        });
+    }
+
+    res.json(leaderboard);
 });
 
 app.get('/api/regulation',(_req,res)=>{
