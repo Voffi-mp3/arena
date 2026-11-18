@@ -1,0 +1,20 @@
+.profile-avatar-frame {
+    --avatar-frame-color: transparent;
+    display: inline-grid;
+    width: 48px;
+    height: 48px;
+    padding: 3px;
+    border-radius: 50%;
+    background: var(--avatar-frame-color);
+    place-items: center;
+    flex: 0 0 48px;
+}
+
+.profile-avatar-frame .avatar,
+.profile-avatar-frame .fallback {
+    width: 42px;
+    height: 42px;
+    border: 2px solid var(--surface, #101d32);
+    border-radius: 50%;
+    object-fit: cover;
+}
