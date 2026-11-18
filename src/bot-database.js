@@ -91,20 +91,87 @@ function getStoreCosmetics() {
     `).all(); 
 }
 
-function getCosmeticByCode(code) { 
+function getCosmeticByCode(code) {
     return db.prepare(`
-        SELECT 
-            id,
-            code,
-            name,
-            description,
-            cosmetic_type AS cosmeticType,
-            price,
-            value,
-            active 
-        FROM cosmetics 
-        WHERE code=? COLLATE NOCASE
-    `).get(code); 
+        SELECT
+            c.id,
+            c.code,
+            c.name,
+            c.description,
+            c.cosmetic_type AS cosmeticType,
+            c.price,
+            c.value,
+            c.active,
+            c.stock_limit AS stockLimit,
+            c.available_from AS availableFrom,
+            c.available_until AS availableUntil,
+            c.limited_label AS limitedLabel,
+            COUNT(uc.user_id) AS sold,
+            CASE
+                WHEN c.stock_limit IS NULL
+                    THEN NULL
+                ELSE MAX(
+                    0,
+                    c.stock_limit -
+                    COUNT(uc.user_id)
+                )
+            END AS remaining
+        FROM cosmetics c
+        LEFT JOIN user_cosmetics uc
+            ON uc.cosmetic_id = c.id
+        WHERE c.code = ? COLLATE NOCASE
+        GROUP BY c.id
+    `).get(code);
+}
+
+function getCosmeticAvailability(cosmetic) {
+    if (!cosmetic || cosmetic.active !== 1) {
+        return {
+            available: false,
+            reason: "INACTIVE"
+        };
+    }
+
+    const now = new Date();
+
+    if (
+        cosmetic.availableFrom &&
+        now < new Date(
+            `${cosmetic.availableFrom}Z`
+        )
+    ) {
+        return {
+            available: false,
+            reason: "NOT_STARTED"
+        };
+    }
+
+    if (
+        cosmetic.availableUntil &&
+        now > new Date(
+            `${cosmetic.availableUntil}Z`
+        )
+    ) {
+        return {
+            available: false,
+            reason: "EXPIRED"
+        };
+    }
+
+    if (
+        cosmetic.stockLimit !== null &&
+        cosmetic.remaining <= 0
+    ) {
+        return {
+            available: false,
+            reason: "SOLD_OUT"
+        };
+    }
+
+    return {
+        available: true,
+        reason: null
+    };
 }
 
 function getOwnedCosmetics(discordId) { 
@@ -158,6 +225,13 @@ function purchaseCosmetic(discordId, code) {
         if (user.status !== 'active') throw new Error('USER_INACTIVE');
 
         const cosmetic = getCosmeticByCode(code);
+        const availability =getCosmeticAvailability(cosmetic);
+
+        if (!availability.available) {
+            throw new Error(
+                availability.reason
+            );
+        }
         if (!cosmetic || cosmetic.active !== 1) throw new Error('COSMETIC_NOT_FOUND');
 
         const balance = ensureTokenBalance(user.id);
@@ -171,6 +245,25 @@ function purchaseCosmetic(discordId, code) {
             error.available = balance.balance; 
             error.required = cosmetic.price; 
             throw error; 
+        }
+
+        const currentStock = db.prepare(`
+            SELECT
+                c.stock_limit AS stockLimit,
+            COUNT(uc.user_id) AS sold
+            FROM cosmetics c
+            LEFT JOIN user_cosmetics uc
+                ON uc.cosmetic_id = c.id
+            WHERE c.id = ?
+            GROUP BY c.id
+        `).get(cosmetic.id);
+
+        if (
+            currentStock.stockLimit !== null &&
+            currentStock.sold >=
+                currentStock.stockLimit
+        ) {
+            throw new Error("SOLD_OUT");
         }
 
         db.prepare(`
