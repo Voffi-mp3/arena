@@ -188,32 +188,41 @@ function startBot() {
                         ephemeral:true
                     });
                     const color=c.cosmeticType==='avatar_frame'&&/^#[0-9a-f]{6}$/i.test(c.value)?parseInt(c.value.slice(1),16):fallbackColor;
-                    const preview=c.cosmeticType==='title_prefix'
-                        ?`${c.value} Voffi`
-                        :c.cosmeticType==='title_suffix'
-                        ?`Voffi ${c.value}`
-                        :`Avatar ring color: ${c.value}`;
-                    return interaction.reply({
-                        embeds:[
-                            new EmbedBuilder()
-                                .setColor(color)
-                                .setTitle(`Preview: ${c.name}`)
-                                .setDescription(c.description)
-                                .addFields(
-                                    {
-                                        name:'Price',
-                                        value:`${c.price} Tokens`,
-                                        inline:true
-                                    },
-                                    {
-                                        name:'Preview',
-                                        value:preview
+                    const websiteUser = database.getWebsiteUser(interaction.user.id);
+
+                    const previewName =
+                        websiteUser?.displayName ||
+                        interaction.member?.displayName ||
+                        interaction.user.globalName ||
+                        interaction.user.username;
+
+                    const preview =
+                        c.cosmeticType === 'title_prefix'
+                            ? `${c.value} ${previewName}`
+                            : c.cosmeticType === 'title_suffix'
+                                ? `${previewName} ${c.value}`
+                                : `Avatar ring for ${previewName}`;
+                                        return interaction.reply({
+                                            embeds:[
+                                                new EmbedBuilder()
+                                                    .setColor(color)
+                                                    .setTitle(`Preview: ${c.name}`)
+                                                    .setDescription(c.description)
+                                                    .addFields(
+                                                        {
+                                                            name:'Price',
+                                                            value:`${c.price} Tokens`,
+                                                            inline:true
+                                                        },
+                                                        {
+                                                            name:'Preview',
+                                                            value:preview
+                                                        }
+                                                    )
+                                            ],
+                                            ephemeral:true
+                                        });
                                     }
-                                )
-                        ],
-                        ephemeral:true
-                    });
-                }
                 if (sub === 'owned') {
                     const list=database.getOwnedCosmetics(interaction.user.id);
                      return interaction.reply({
