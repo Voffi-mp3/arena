@@ -201,7 +201,7 @@ const cosmetics = [
     ['peach-ring','Peach Avatar Ring','Adds a peach ring around your avatar.','avatar_frame',200,'#f2c4af',40],
     ['purple-ring','Purple Avatar Ring','Adds a purple ring around your avatar.','avatar_frame',200,'#cea3d3',50],
     ['blue-ring','Blue Avatar Ring','Adds a blue ring around your avatar.','avatar_frame',200,'#a5afd6',60],
-    ['winter-2026','Winter 2026 Ring','Adds a animated winter ring around your avatar.','avatar_frame',1000,'img/avatar-rings/winter2026.gif',1]
+    ['winter-2026','Winter 2026 Ring','Adds a animated winter ring around your avatar.','avatar_frame',1000,'https://github.com/Voffi-mp3/arena/blob/main/docs/img/avatar-rings/Winter2026.gif?raw=true',1]
 ];
 
 db.prepare(`
