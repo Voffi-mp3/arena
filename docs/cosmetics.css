@@ -1,20 +1,37 @@
 .profile-avatar-frame {
     --avatar-frame-color: transparent;
+    position: relative;
     display: inline-grid;
-    width: 48px;
-    height: 48px;
-    padding: 3px;
+    width: 52px;
+    height: 52px;
+    place-items: center;
+    flex: 0 0 52px;
+}
+
+.profile-avatar-frame-color {
+    padding: 4px;
     border-radius: 50%;
     background: var(--avatar-frame-color);
-    place-items: center;
-    flex: 0 0 48px;
 }
 
 .profile-avatar-frame .avatar,
 .profile-avatar-frame .fallback {
-    width: 42px;
-    height: 42px;
+    position: relative;
+    z-index: 1;
+    width: 44px;
+    height: 44px;
     border: 2px solid var(--surface, #101d32);
     border-radius: 50%;
     object-fit: cover;
+}
+
+.avatar-frame-decoration {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    pointer-events: none;
+    user-select: none;
 }
