@@ -159,6 +159,30 @@ db.exec(`
     );
 `);
 
+addColumnIfMissing(
+    "cosmetics",
+    "stock_limit",
+    "INTEGER"
+);
+
+addColumnIfMissing(
+    "cosmetics",
+    "available_from",
+    "TEXT"
+);
+
+addColumnIfMissing(
+    "cosmetics",
+    "available_until",
+    "TEXT"
+);
+
+addColumnIfMissing(
+    "cosmetics",
+    "limited_label",
+    "TEXT"
+);
+
 function hasColumn(tableName, columnName) {
     return db.prepare(`PRAGMA table_info(${tableName})`).all().some(column => column.name === columnName);
 }
@@ -176,8 +200,20 @@ const cosmetics = [
     ['gladiator','Gladiator','Displays Galdiator before your name.','title_prefix',400,'Gladiator',30],
     ['peach-ring','Peach Avatar Ring','Adds a peach ring around your avatar.','avatar_frame',200,'#f2c4af',40],
     ['purple-ring','Purple Avatar Ring','Adds a purple ring around your avatar.','avatar_frame',200,'#cea3d3',50],
-    ['blue-ring','Blue Avatar Ring','Adds a blue ring around your avatar.','avatar_frame',200,'#a5afd6',60]
+    ['blue-ring','Blue Avatar Ring','Adds a blue ring around your avatar.','avatar_frame',200,'#a5afd6',60],
+    ['winter-2026','Winter 2026 Ring','Adds a animated winter ring around your avatar.','avatar_frame',1000,'img/avatar-rings/winter2026.gif',80]
 ];
+
+db.prepare(`
+    UPDATE cosmetics
+    SET
+        available_from = '2026-11-18 00:00:00',
+        available_until = '2026-02-01 00:00:00',
+        limited_label = 'Winter 2026 Limited',
+        active = 1
+    WHERE code = 'winter-2026'
+`).run();
+
 const seedCosmetic = db.prepare(`
     INSERT INTO cosmetics(
         code,
