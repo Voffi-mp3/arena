@@ -8,6 +8,11 @@ const helmet=require('helmet');
 const rateLimit=require('express-rate-limit');
 const {db,upsertUser,getUserById}=require('./database');
 const { startBot } = require('./bot');
+const VALID_USER_STATUSES = [
+    'active',
+    'inactive',
+    'banned'
+];
 
 const app=express();
 const production=process.env.NODE_ENV==='production';
@@ -89,17 +94,31 @@ passport.deserializeUser((id,d)=>{
     }
 });
 
-passport.use(new DiscordStrategy({
-    clientID:process.env.DISCORD_CLIENT_ID,clientSecret:process.env.DISCORD_CLIENT_SECRET,callbackURL:process.env.DISCORD_CALLBACK_URL,scope:['identify']
-}
-,(_a,_r,p,d)=>{
-    try{
-        d(null,upsertUser({
-            discordId:p.id,username:p.username,displayName:p.global_name||p.displayName||p.username,avatar:p.avatar
-        }))
-    }
-    catch(e){
-        d(e)
+passport.use(new DiscordStrategy(
+{
+    clientID: process.env.DISCORD_CLIENT_ID,
+    clientSecret: process.env.DISCORD_CLIENT_SECRET,
+    callbackURL: process.env.DISCORD_CALLBACK_URL,
+    scope: ['identify']
+},
+(_a, _r, p, d) => {
+    try {
+        const user = upsertUser({
+            discordId: p.id,
+            username: p.username,
+            displayName: p.global_name || p.displayName || p.username,
+            avatar: p.avatar
+        });
+
+        if (user.status === 'banned') {
+            return d(null, false, {
+                message: 'You are banned.'
+            });
+        }
+
+        d(null, user);
+    } catch (e) {
+        d(e);
     }
 }));
 
@@ -854,6 +873,58 @@ app.patch('/api/regulations/:id', requireAdmin, (req, res) => {
         });
     }
 });
+
+app.get('/api/users', requireAdmin, (_req, res) => {
+    const users = db.prepare(`
+        SELECT
+            id,
+            discord_id AS discordId,
+            username,
+            display_name AS displayName,
+            role,
+            status,
+            created_at AS createdAt
+        FROM users
+        ORDER BY display_name
+    `).all();
+
+    res.json({ users });
+});
+
+app.patch('/api/users/:id/status', requireAdmin, (req, res) => {
+    const id = validId(req.params.id);
+    const { status } = req.body || {};
+
+    if (!id) {
+        return res.status(400).json({
+            error: 'Invalid user ID.'
+        });
+    }
+
+    if (!VALID_USER_STATUSES.includes(status)) {
+        return res.status(400).json({
+            error: 'Invalid status.'
+        });
+    }
+
+    const result = db.prepare(`
+        UPDATE users
+        SET status = ?
+        WHERE id = ?
+    `).run(status, id);
+
+    if (!result.changes) {
+        return res.status(404).json({
+            error: 'User not found.'
+        });
+    }
+
+    res.json({
+        success: true,
+        status
+    });
+});
+
 
 app.post(
     '/api/regulations/:id/activate',
