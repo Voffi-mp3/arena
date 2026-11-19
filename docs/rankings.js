@@ -13,61 +13,62 @@
     }
 
     function avatar(player) {
-    const frame = document.createElement("span");
+    const frame =
+        document.createElement("span");
 
-    frame.className = "profile-avatar-frame";
+    frame.className =
+        "profile-avatar-frame";
 
     const frameValue =
         player.cosmetics
             ?.avatarFrame
-            ?.value || null;
+            ?.value || "";
 
     const isColorFrame =
         /^#[0-9a-f]{6}$/i.test(
-            frameValue || ""
+            frameValue
         );
 
     const isImageFrame =
         /^img\/avatar-rings\/[a-z0-9._-]+\.(png|webp|gif)$/i.test(
-            frameValue || ""
+            frameValue
         );
 
     if (isColorFrame) {
+        frame.classList.add(
+            "profile-avatar-frame-color"
+        );
+
         frame.style.setProperty(
             "--avatar-frame-color",
             frameValue
         );
-
-        frame.classList.add(
-            "profile-avatar-frame-color"
-        );
     }
 
-    let profileImage;
+    let profilePicture;
 
     if (
         player.avatar &&
         player.discordId
     ) {
-        profileImage =
+        profilePicture =
             document.createElement("img");
 
-        profileImage.className =
+        profilePicture.className =
             "avatar";
 
-        profileImage.alt = "";
+        profilePicture.alt = "";
+        profilePicture.loading = "lazy";
 
-        profileImage.loading =
-            "lazy";
-
-        profileImage.src =
+        profilePicture.src =
             "https://cdn.discordapp.com/avatars/" +
-            `${player.discordId}/${player.avatar}.png`;
+            `${player.discordId}/` +
+            `${player.avatar}.png?size=128`;
 
-        profileImage.addEventListener(
+        profilePicture.addEventListener(
             "error",
             () => {
-                profileImage.replaceWith(
+                profilePicture.replaceWith(
                     fallback(
                         player.baseDisplayName ||
                         player.displayName
@@ -76,13 +77,13 @@
             }
         );
     } else {
-        profileImage = fallback(
+        profilePicture = fallback(
             player.baseDisplayName ||
             player.displayName
         );
     }
 
-    frame.appendChild(profileImage);
+    frame.appendChild(profilePicture);
 
     if (isImageFrame) {
         const decoration =
@@ -92,11 +93,18 @@
             "avatar-frame-decoration";
 
         decoration.alt = "";
-
-        decoration.loading =
-            "lazy";
-
+        decoration.loading = "eager";
         decoration.src = frameValue;
+
+        decoration.addEventListener(
+            "error",
+            () => {
+                console.error(
+                    "Avatar decoration failed to load:",
+                    decoration.src
+                );
+            }
+        );
 
         frame.appendChild(decoration);
     }
