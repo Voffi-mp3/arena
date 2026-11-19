@@ -201,14 +201,15 @@ const cosmetics = [
     ['peach-ring','Peach Avatar Ring','Adds a peach ring around your avatar.','avatar_frame',200,'#f2c4af',40],
     ['purple-ring','Purple Avatar Ring','Adds a purple ring around your avatar.','avatar_frame',200,'#cea3d3',50],
     ['blue-ring','Blue Avatar Ring','Adds a blue ring around your avatar.','avatar_frame',200,'#a5afd6',60],
-    ['winter-2026','Winter 2026 Ring','Adds a animated winter ring around your avatar.','avatar_frame',1000,'img/avatar-rings/Winter2026.gif',1]
+    ['winter-2026','Winter 2026 Ring','Adds a animated winter ring around your avatar.','avatar_frame',1000,'img/avatar-rings/Winter2026.gif',1],
+    ['bat','Bat Deco','Adds 2 animated Bats on your avatar.','avatar_frame',500,'img/avatar-rings/Bat-ring-animated.gif',31]
 ];
 
 db.prepare(`
     UPDATE cosmetics
     SET
         available_from = '2026-11-18 00:00:00',
-        available_until = '2026-02-01 00:00:00',
+        available_until = '2027-02-01 00:00:00',
         limited_label = 'Winter 2026 Limited',
         active = 1
     WHERE code = 'winter-2026'
