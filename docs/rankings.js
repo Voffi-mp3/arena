@@ -28,7 +28,7 @@
         );
 
     const isImageFrame =
-        /^img\/avatar-rings\/[a-z0-9._-]+\.(png|webp)$/i.test(
+        /^img\/avatar-rings\/[a-z0-9._-]+\.(png|webp|gif)$/i.test(
             frameValue || ""
         );
 
